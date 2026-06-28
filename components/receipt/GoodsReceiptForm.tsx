@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
+import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { receiptSchema, ReceiptFormValues } from "@/lib/validations"
+
 export type SerializedLineItem = {
   id: string
   poId: string
@@ -20,77 +24,105 @@ export type SerializedLineItem = {
 export function GoodsReceiptForm({ poId, items }: { poId: string, items: SerializedLineItem[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
   
-  const [formData, setFormData] = useState({
-    receiptDate: new Date().toISOString().split('T')[0],
-    receivedBy: "admin_gudang",
-    deliveryNoteNumber: "",
+  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<ReceiptFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(receiptSchema) as any,
+    defaultValues: {
+      dateReceived: new Date().toISOString().split('T')[0],
+      receiverName: "admin_gudang",
+      notes: "",
+      items: items.map(item => ({
+        id: item.id,
+        qtyOrdered: Number(item.qtyOrdered),
+        qtyReceived: Number(item.qtyOrdered),
+        notes: ""
+      }))
+    }
   })
 
-  const [receiptItems, setReceiptItems] = useState(
-    items.map(item => ({
-      poLineItemId: item.id,
-      itemName: item.itemName,
-      qtyOrdered: Number(item.qtyOrdered),
-      priceOrdered: Number(item.priceOrdered),
-      qtyReceived: Number(item.qtyOrdered), // default receive full
-      priceInvoice: Number(item.priceOrdered), // default same price
-      condition: "OK"
-    }))
-  )
+  const { fields } = useFieldArray({
+    control,
+    name: "items"
+  })
 
-  const updateItem = (id: string, field: string, value: string | number) => {
-    setReceiptItems(receiptItems.map(item => 
-      item.poLineItemId === id ? { ...item, [field]: value } : item
-    ))
-  }
+  const watchItems = watch("items")
+  const hasDiscrepancy = watchItems.some(i => Number(i.qtyReceived) !== i.qtyOrdered)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: ReceiptFormValues) => {
     setLoading(true)
-    
+    setErrorMsg("")
     try {
+      // Data shape needed by API (which we haven't updated yet, but we will match the old shape for now or update it later)
+      // The old API expects: items: { poLineItemId, qtyReceived, priceInvoice, condition }
+      // We will map our form data to the expected API shape.
+      
+      const payload = {
+        poId,
+        receiptDate: data.dateReceived,
+        receivedBy: data.receiverName,
+        deliveryNoteNumber: data.notes || "SJ-AUTO",
+        items: data.items.map((i, index) => {
+          const original = items[index];
+          return {
+            poLineItemId: i.id,
+            itemName: original.itemName,
+            qtyOrdered: original.qtyOrdered,
+            priceOrdered: original.priceOrdered,
+            qtyReceived: Number(i.qtyReceived),
+            priceInvoice: original.priceOrdered, // Assuming price doesn't change on receipt for this simplified form
+            condition: "OK"
+          }
+        })
+      }
+
       const res = await fetch("/api/goods-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          poId,
-          ...formData,
-          items: receiptItems
-        })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
         router.push(`/purchase-orders/${poId}`)
         router.refresh()
+      } else {
+        const errData = await res.json();
+        setErrorMsg(errData.error || "Terjadi kesalahan saat menyimpan");
       }
     } catch (err) {
       console.error(err)
+      setErrorMsg("Gagal menghubungi server");
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {errorMsg && (
+        <div className="rounded-md bg-red-50 p-4 border border-red-200 text-sm text-red-600 font-medium">
+          {errorMsg}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Tanggal Terima</label>
           <Input 
             type="date" 
-            required
-            value={formData.receiptDate}
-            onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })}
+            {...register("dateReceived")}
+            className={errors.dateReceived ? "border-red-500" : ""}
           />
+          {errors.dateReceived && <p className="text-red-500 text-xs">{errors.dateReceived.message}</p>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Nomor Surat Jalan</label>
+          <label className="text-sm font-medium text-slate-700">Nama Penerima</label>
           <Input 
-            required
-            placeholder="SJ-XXXXX"
-            value={formData.deliveryNoteNumber}
-            onChange={(e) => setFormData({ ...formData, deliveryNoteNumber: e.target.value })}
+            {...register("receiverName")}
+            className={errors.receiverName ? "border-red-500" : ""}
           />
+          {errors.receiverName && <p className="text-red-500 text-xs">{errors.receiverName.message}</p>}
         </div>
       </div>
 
@@ -102,59 +134,36 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
               <TableHead>Item</TableHead>
               <TableHead className="text-right">Qty (PO)</TableHead>
               <TableHead className="text-right">Qty Aktual</TableHead>
-              <TableHead className="text-right">Harga Aktual</TableHead>
-              <TableHead>Kondisi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {receiptItems.map((item) => {
-              const hasQtyDiff = item.qtyReceived !== item.qtyOrdered;
-              const hasPriceDiff = item.priceInvoice !== item.priceOrdered;
+            {fields.map((field, index) => {
+              const original = items[index];
+              const currentQty = Number(watchItems[index]?.qtyReceived || 0);
+              const hasDiff = currentQty !== original.qtyOrdered;
 
               return (
-                <TableRow key={item.poLineItemId} className={(hasQtyDiff || hasPriceDiff) ? "bg-amber-50" : ""}>
-                  <TableCell className="font-medium">{item.itemName}</TableCell>
-                  <TableCell className="text-right">{item.qtyOrdered}</TableCell>
+                <TableRow key={field.id} className={hasDiff ? "bg-amber-50" : ""}>
+                  <TableCell className="font-medium">{original.itemName}</TableCell>
+                  <TableCell className="text-right">{original.qtyOrdered}</TableCell>
                   <TableCell>
                     <Input 
                       type="number" 
                       min="0"
-                      required
-                      className={`text-right ${hasQtyDiff ? 'border-amber-400 focus:ring-amber-400' : ''}`}
-                      value={item.qtyReceived}
-                      onChange={(e) => updateItem(item.poLineItemId, "qtyReceived", Number(e.target.value))}
+                      className={`text-right ${hasDiff ? 'border-amber-400 focus:ring-amber-400' : ''} ${errors.items?.[index]?.qtyReceived ? 'border-red-500' : ''}`}
+                      {...register(`items.${index}.qtyReceived` as const)}
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      type="number" 
-                      min="0"
-                      required
-                      className={`text-right ${hasPriceDiff ? 'border-amber-400 focus:ring-amber-400' : ''}`}
-                      value={item.priceInvoice}
-                      onChange={(e) => updateItem(item.poLineItemId, "priceInvoice", Number(e.target.value))}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <select 
-                      className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={item.condition}
-                      onChange={(e) => updateItem(item.poLineItemId, "condition", e.target.value)}
-                    >
-                      <option value="OK">OK</option>
-                      <option value="DAMAGED">Rusak</option>
-                      <option value="SHORT">Kurang</option>
-                    </select>
+                    {errors.items?.[index]?.qtyReceived && <p className="text-red-500 text-xs text-right mt-1">{errors.items[index]?.qtyReceived?.message}</p>}
                   </TableCell>
                 </TableRow>
               )
             })}
           </TableBody>
         </Table>
-        {(receiptItems.some(i => i.qtyReceived !== i.qtyOrdered || i.priceInvoice !== i.priceOrdered)) && (
+        {hasDiscrepancy && (
           <div className="rounded-md bg-amber-50 p-4 border border-amber-200 text-sm text-amber-800 flex items-start gap-3">
             <span className="text-xl leading-none">⚠️</span>
-            <p><strong>Perhatian:</strong> Terdapat selisih antara jumlah pesanan dan aktual, atau harga faktur. PO ini akan ditandai dengan status <strong>DISCREPANCY</strong> dan dilaporkan ke bagian Keuangan jika Anda menyimpannya.</p>
+            <p><strong>Perhatian:</strong> Terdapat selisih antara jumlah pesanan dan aktual. PO ini akan ditandai dengan status <strong>DISCREPANCY</strong> dan dilaporkan ke bagian Keuangan.</p>
           </div>
         )}
       </div>
