@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id           String          @id @default(cuid())
+  name         String
+  contact      String?
+  paymentTerms String?
+  orders       PurchaseOrder[]
+  createdAt    DateTime        @default(now())
+}
+
+model PurchaseOrder {
+  id            String         @id @default(cuid())
+  poNumber      String         @unique
+  supplierId    String
+  supplier      Supplier       @relation(fields: [supplierId], references: [id])
+  dateOrdered   DateTime
+  dateExpected  DateTime?
+  dateReceived  DateTime?
+  status        String         @default("DRAFT") // DRAFT, SENT, PARTIAL, RECEIVED, DISCREPANCY, PAID
+  notes         String?
+  lineItems     POLineItem[]
+  goodsReceipts GoodsReceipt[]
+  alerts        Alert[]
+  createdBy     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model POLineItem {
+  id           String         @id @default(cuid())
+  poId         String
+  po           PurchaseOrder  @relation(fields: [poId], references: [id])
+  itemName     String
+  unit         String
+  qtyOrdered   Decimal
+  qtyReceived  Decimal?
+  priceOrdered Decimal
+  priceInvoice Decimal?
+  condition    String?        // OK, DAMAGED, SHORT
+  createdAt    DateTime       @default(now())
+}
+
+model GoodsReceipt {
+  id                 String        @id @default(cuid())
+  poId               String
+  po                 PurchaseOrder @relation(fields: [poId], references: [id])
+  receiptDate        DateTime
+  receivedBy         String
+  deliveryNoteNumber String?
+  photoUrl           String?
+  createdAt          DateTime      @default(now())
+}
+
+model Alert {
+  id             String        @id @default(cuid())
+  poId           String
+  po             PurchaseOrder @relation(fields: [poId], references: [id])
+  type           String        // QTY_DISCREPANCY, PRICE_DISCREPANCY
+  itemName       String
+  valueDiff      Decimal
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  resolution     String?       // ACCEPTED, CREDIT_NOTE, HOLD
+  createdAt      DateTime      @default(now())
+}
