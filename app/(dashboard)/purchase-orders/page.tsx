@@ -128,7 +128,7 @@ export default async function PurchaseOrdersPage({
               <span className="text-xs text-slate-500 font-medium">
                 {totalItems} total — halaman {currentPage} dari {totalPages || 1}
               </span>
-              <Pagination totalPages={totalPages} />
+              <Suspense fallback={<div className="h-10" />}><Pagination totalPages={totalPages} /></Suspense>
             </div>
           </>
         )}

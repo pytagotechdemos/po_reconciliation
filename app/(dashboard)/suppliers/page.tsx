@@ -24,7 +24,7 @@ export default async function SuppliersPage() {
         title="Master Data Supplier"
         description="Daftar lengkap mitra pemasok untuk perusahaan."
         icon={<Building2 className="w-8 h-8" />}
-        color="blue"
+        color="violet"
       />
 
       <SuppliersTable suppliers={suppliers} />

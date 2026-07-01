@@ -72,7 +72,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-slate-200/60 overflow-hidden">
 
           {/* Header */}
-          <div className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 px-8 py-10 text-center">
+          <div className="bg-gradient-to-br from-violet-600 via-purple-600 to-purple-700 px-8 py-10 text-center">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

@@ -2,10 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ShieldAlert } from "lucide-react";
-import { History } from "lucide-react"
+import { ShieldAlert, History } from "lucide-react"
+import { Suspense } from "react"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { AuditLogsTable } from "@/components/audit-logs/AuditLogsTable"
+import { TableSkeleton } from "@/components/ui/Skeleton"
 
 const PAGE_SIZE = 20
 
@@ -78,15 +79,17 @@ export default async function AuditLogsPage({
         }
       />
 
-      <AuditLogsTable
-        initialLogs={logs}
-        totalCount={totalCount}
-        initialSearch={query}
-        initialAction={actionFilter}
-        initialEntity={entityFilter}
-        initialFrom={dateFrom}
-        initialTo={dateTo}
-      />
+      <Suspense fallback={<div className="bg-white rounded-xl border border-slate-200 p-6"><TableSkeleton rows={5} cols={5} /></div>}>
+        <AuditLogsTable
+          initialLogs={logs}
+          totalCount={totalCount}
+          initialSearch={query}
+          initialAction={actionFilter}
+          initialEntity={entityFilter}
+          initialFrom={dateFrom}
+          initialTo={dateTo}
+        />
+      </Suspense>
     </div>
   );
 }
