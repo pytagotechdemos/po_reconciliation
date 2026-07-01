@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Search, Plus, Edit, Trash2, Package, Tag, Box } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import { Modal } from "@/components/ui/Modal"
@@ -49,13 +50,14 @@ export function ItemsTable({ items }: ItemsTableProps) {
       const res = await fetch(`/api/items/${deleteTarget.id}`, { method: "DELETE" })
       if (res.ok) {
         setDeleteTarget(null)
+        toast.success(`"${deleteTarget.name}" berhasil dihapus`)
         router.refresh()
       } else {
-        const err = await res.json()
-        alert(err.error || "Gagal menghapus barang")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Gagal menghapus barang")
       }
     } catch {
-      alert("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setDeleting(false)
     }

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
@@ -25,14 +26,13 @@ type Item = {
 export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Item[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<POFormValues>({
+  const { register, control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<POFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(poSchema) as any,
     defaultValues: {
       supplierId: "",
-      dateOrdered: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
+      dateOrdered: "",
       dateExpected: "",
       taxRate: 11,
       taxAmount: 0,
@@ -41,6 +41,13 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
       ]
     }
   })
+
+  useEffect(() => {
+    if (!getValues("dateOrdered")) {
+      const d = new Date()
+      setValue("dateOrdered", `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+    }
+  }, [getValues, setValue])
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -66,9 +73,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
 
   const onSubmit = async (data: POFormValues) => {
     setLoading(true)
-    setErrorMsg("")
     try {
-      // Calculate taxAmount again to be safe
       const currentSubtotal = data.lineItems.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0)
       data.taxAmount = (currentSubtotal * (data.taxRate || 0)) / 100
 
@@ -79,15 +84,15 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
       })
 
       if (res.ok) {
+        toast.success("PO berhasil dibuat dan menunggu persetujuan")
         router.push("/purchase-orders")
         router.refresh()
       } else {
-        const errorData = await res.json()
-        setErrorMsg(errorData.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
-    } catch (err) {
-      console.error(err)
-      setErrorMsg("Gagal menghubungi server")
+    } catch {
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -95,12 +100,6 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {errorMsg && (
-        <div className="rounded-md bg-red-50 p-4 border border-red-200 text-sm text-red-600 font-medium">
-          {errorMsg}
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Supplier</label>
@@ -139,7 +138,6 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-slate-900">Barang / Item</h3>
         {errors.lineItems?.root && <p className="text-red-500 text-xs">{errors.lineItems.root.message}</p>}
-        <div className="rounded-xl border border-slate-200 overflow-x-auto">
           <Table className="min-w-[800px]">
             <TableHeader>
             <TableRow>
@@ -159,6 +157,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                     className={`flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.lineItems?.[index]?.itemName ? 'border-red-500' : 'border-slate-300'}`}
                     onChange={(e) => handleItemSelect(index, e.target.value)}
                     value={watchLineItems[index]?.sku || ""}
+                    aria-label="Pilih Barang"
                   >
                     <option value="">-- Pilih Barang --</option>
                     {items.map(i => (
@@ -173,6 +172,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                     placeholder="Dus/Pack" 
                     {...register(`lineItems.${index}.unit` as const)}
                     className={`bg-slate-50 ${errors.lineItems?.[index]?.unit ? 'border-red-500' : ''}`}
+                    aria-label="Satuan"
                   />
                 </TableCell>
                 <TableCell>
@@ -181,6 +181,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                     min="1" 
                     className={`text-right ${errors.lineItems?.[index]?.qty ? 'border-red-500' : ''}`}
                     {...register(`lineItems.${index}.qty` as const)}
+                    aria-label="Quantity"
                   />
                 </TableCell>
                 <TableCell>
@@ -189,6 +190,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                     min="0" 
                     className={`text-right ${errors.lineItems?.[index]?.price ? 'border-red-500' : ''}`}
                     {...register(`lineItems.${index}.price` as const)}
+                    aria-label="Harga Satuan"
                   />
                 </TableCell>
                 <TableCell className="text-right font-medium align-middle">
@@ -198,6 +200,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                   <button 
                     type="button" 
                     onClick={() => remove(index)}
+                    aria-label="Hapus Item"
                     className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -207,7 +210,6 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
             ))}
           </TableBody>
         </Table>
-        </div>
         
         <div className="flex justify-between items-start pt-4">
           <Button type="button" variant="outline" onClick={() => append({ itemName: "", sku: "", unit: "-", qty: 1, price: 0 })}>

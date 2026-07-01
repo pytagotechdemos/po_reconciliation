@@ -10,6 +10,7 @@ import { ResolveButton } from "@/components/po/ResolveButton"
 import { ApproveButton } from "@/components/po/ApproveButton"
 import { ReadyToPayButton } from "@/components/po/ReadyToPayButton"
 import { MarkPaidButton } from "@/components/po/MarkPaidButton"
+import { DuplicatePOButton } from "@/components/po/DuplicatePOButton"
 import { PackagePlus, FileText } from "lucide-react"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { getServerSession } from "next-auth/next"
@@ -51,13 +52,14 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         </Link>
       </div>
 
-      <PageHeader 
-        title={po.poNumber} 
+      <PageHeader
+        title={po.poNumber}
         description={`Dipesan dari ${po.supplier.name}`}
         icon={<FileText className="w-8 h-8" />}
         color="violet"
         actions={
           <>
+            <DuplicatePOButton poId={po.id} poNumber={po.poNumber} />
             <PrintButton />
             
             {po.status === "WAITING_APPROVAL" && isOwner && (
@@ -88,7 +90,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h3 className="text-sm font-semibold uppercase text-slate-500 mb-4">Informasi Supplier</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -102,7 +104,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
           </dl>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h3 className="text-sm font-semibold uppercase text-slate-500 mb-4">Detail Waktu</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -117,7 +119,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm overflow-x-auto">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <h3 className="text-lg font-semibold text-slate-900 p-2 mb-2">Item Pesanan</h3>
         <Table className="min-w-[800px]">
           <TableHeader>
@@ -188,7 +190,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
       </div>
 
       {po.goodsReceipts.length > 0 && (
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900 p-2 mb-2">Riwayat Penerimaan</h3>
           {po.goodsReceipts.length > 1 && (
             <p className="text-xs text-slate-500 mb-3 px-2">

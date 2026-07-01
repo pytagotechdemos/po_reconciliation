@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Modal } from "@/components/ui/Modal"
 import { CheckCircle, CreditCard, PauseCircle, AlertCircle } from "lucide-react"
@@ -40,12 +41,10 @@ export function ResolveButton({ poId }: { poId: string }) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Resolution | null>(null)
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
 
   const handleResolve = async () => {
     if (!selected) return
     setLoading(true)
-    setErrorMsg("")
     try {
       const res = await fetch("/api/resolve-discrepancy", {
         method: "POST",
@@ -54,14 +53,16 @@ export function ResolveButton({ poId }: { poId: string }) {
       })
 
       if (res.ok) {
+        const label = RESOLUTIONS.find(r => r.value === selected)?.label || selected
+        toast.success(`Selisih berhasil diselesaikan: ${label}`)
         setOpen(false)
         router.refresh()
       } else {
-        const err = await res.json()
-        setErrorMsg(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
     } catch {
-      setErrorMsg("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -74,13 +75,8 @@ export function ResolveButton({ poId }: { poId: string }) {
         Selesaikan Selisih (Keuangan)
       </Button>
 
-      <Modal isOpen={open} onClose={() => { setOpen(false); setSelected(null); setErrorMsg("") }} title="Pilih Tindakan Penyelesaian">
+      <Modal isOpen={open} onClose={() => { setOpen(false); setSelected(null) }} title="Pilih Tindakan Penyelesaian">
         <div className="space-y-3">
-          {errorMsg && (
-            <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">
-              {errorMsg}
-            </div>
-          )}
           <p className="text-sm text-slate-500 mb-2">
             Pilih bagaimana selisih PO ini akan ditangani:
           </p>

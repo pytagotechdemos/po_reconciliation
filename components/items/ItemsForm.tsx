@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 
@@ -24,7 +25,6 @@ const CATEGORIES = ["FMCG", "Material", "Souvenir", "ATK", "Snack", "Minuman", "
 
 export function ItemsForm({ item, onSuccess, onCancel }: ItemsFormProps) {
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
   const [sku, setSku] = useState(item?.sku || "")
   const [name, setName] = useState(item?.name || "")
   const [unit, setUnit] = useState(item?.unit || "")
@@ -35,11 +35,10 @@ export function ItemsForm({ item, onSuccess, onCancel }: ItemsFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!sku.trim() || !name.trim() || !unit.trim()) {
-      setErrorMsg("SKU, Nama, dan Satuan wajib diisi")
+      toast.error("SKU, Nama, dan Satuan wajib diisi")
       return
     }
     setLoading(true)
-    setErrorMsg("")
     try {
       const payload = {
         sku,
@@ -58,13 +57,14 @@ export function ItemsForm({ item, onSuccess, onCancel }: ItemsFormProps) {
         }
       )
       if (res.ok) {
+        toast.success(item?.id ? `"${name}" berhasil diperbarui` : `"${name}" berhasil ditambahkan`)
         onSuccess()
       } else {
-        const err = await res.json()
-        setErrorMsg(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
     } catch {
-      setErrorMsg("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -72,11 +72,6 @@ export function ItemsForm({ item, onSuccess, onCancel }: ItemsFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {errorMsg && (
-        <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">
-          {errorMsg}
-        </div>
-      )}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">SKU *</label>

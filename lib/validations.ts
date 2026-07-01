@@ -12,8 +12,8 @@ export const poSchema = z.object({
   supplierId: z.string().min(1, "Supplier wajib dipilih"),
   dateOrdered: z.string().min(1, "Tanggal wajib diisi"),
   dateExpected: z.string().optional(),
-  taxRate: z.coerce.number().optional().default(11),
-  taxAmount: z.coerce.number().optional().default(0),
+  taxRate: z.coerce.number().min(0, "Pajak tidak boleh negatif").optional().default(11),
+  taxAmount: z.coerce.number().min(0, "Pajak tidak boleh negatif").optional().default(0),
   lineItems: z.array(poLineItemSchema).min(1, "Minimal 1 item"),
 });
 
@@ -31,6 +31,7 @@ export const receiptLineItemSchema = z.object({
 export const receiptSchema = z.object({
   dateReceived: z.string().min(1, "Tanggal wajib diisi"),
   receiverName: z.string().min(1, "Nama penerima wajib diisi"),
+  deliveryNoteNumber: z.string().optional().nullable().default(null),
   notes: z.string().optional(),
   expiryDate: z.string().optional(),
   photoUrl: z.string().optional(),

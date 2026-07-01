@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { DollarSign } from "lucide-react"
 
@@ -14,8 +15,15 @@ export function ReadyToPayButton({ poId }: { poId: string }) {
     setLoading(true)
     try {
       const res = await fetch(`/api/po/${poId}/ready-to-pay`, { method: "POST" })
-      if (res.ok) router.refresh()
-      else alert("Gagal menandai PO siap bayar")
+      if (res.ok) {
+        toast.success("PO ditandai siap bayar")
+        router.refresh()
+      } else {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Gagal menandai PO siap bayar")
+      }
+    } catch {
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }

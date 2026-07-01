@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Star } from "lucide-react"
@@ -21,7 +22,6 @@ type SupplierFormProps = {
 
 export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProps) {
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
   const [name, setName] = useState(supplier?.name || "")
   const [contact, setContact] = useState(supplier?.contact || "")
   const [paymentTerms, setPaymentTerms] = useState(supplier?.paymentTerms || "")
@@ -30,11 +30,10 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setErrorMsg("Nama supplier wajib diisi")
+      toast.error("Nama supplier wajib diisi")
       return
     }
     setLoading(true)
-    setErrorMsg("")
     try {
       const payload = { name, contact, paymentTerms, performanceScore }
       const res = await fetch(
@@ -46,13 +45,14 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
         }
       )
       if (res.ok) {
+        toast.success(supplier?.id ? `"${name}" berhasil diperbarui` : `"${name}" berhasil ditambahkan`)
         onSuccess()
       } else {
-        const err = await res.json()
-        setErrorMsg(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
     } catch {
-      setErrorMsg("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -60,18 +60,13 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {errorMsg && (
-        <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">
-          {errorMsg}
-        </div>
-      )}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">Nama Supplier *</label>
         <Input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Contoh: PT Maju Bersama"
-          className={!name.trim() && errorMsg ? "border-red-500" : ""}
+          className={!name.trim() ? "border-red-500" : ""}
         />
       </div>
       <div className="space-y-2">

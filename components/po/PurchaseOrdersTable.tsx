@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
@@ -24,7 +25,6 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
   const router = useRouter()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null)
-  const [errorMsg, setErrorMsg] = useState("")
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -59,7 +59,6 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
   const handleBulkAction = async (action: "approve" | "reject") => {
     if (selected.size === 0) return
     setLoading(action)
-    setErrorMsg("")
     try {
       const res = await fetch("/api/po/bulk", {
         method: "POST",
@@ -68,13 +67,14 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
       })
       if (res.ok) {
         setSelected(new Set())
+        toast.success(`${selected.size} PO berhasil ${action === "approve" ? "disetujui" : "ditolak"}`)
         router.refresh()
       } else {
-        const err = await res.json()
-        setErrorMsg(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
     } catch {
-      setErrorMsg("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(null)
     }
@@ -90,7 +90,6 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
             <span className="font-medium">{selected.size} PO dipilih</span>
           </div>
           <div className="flex items-center gap-3">
-            {errorMsg && <span className="text-sm text-red-200">{errorMsg}</span>}
             <Button
               size="sm"
               variant="outline"
@@ -123,29 +122,39 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-200 overflow-x-auto">
-        <Table className="min-w-[800px]">
-          <TableHeader className="bg-slate-50/80">
+      <Table className="min-w-[800px]">
+        <TableHeader className="bg-slate-50/80">
+          <TableRow>
+            <TableHead className="w-12">
+              <input
+                type="checkbox"
+                className="rounded border-slate-300"
+                checked={allWaitingSelected}
+                onChange={toggleAll}
+                aria-label="Select all"
+              />
+            </TableHead>
+            <TableHead className="font-semibold text-slate-700">No. PO</TableHead>
+            <TableHead className="font-semibold text-slate-700">Supplier</TableHead>
+            <TableHead className="font-semibold text-slate-700">Tgl PO</TableHead>
+            <TableHead className="font-semibold text-slate-700">Tgl Terima</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">Total PO</TableHead>
+            <TableHead className="font-semibold text-slate-700">Status</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pos.length === 0 ? (
             <TableRow>
-              <TableHead className="w-12">
-                <input
-                  type="checkbox"
-                  className="rounded border-slate-300"
-                  checked={allWaitingSelected}
-                  onChange={toggleAll}
-                />
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700">No. PO</TableHead>
-              <TableHead className="font-semibold text-slate-700">Supplier</TableHead>
-              <TableHead className="font-semibold text-slate-700">Tgl PO</TableHead>
-              <TableHead className="font-semibold text-slate-700">Tgl Terima</TableHead>
-              <TableHead className="text-right font-semibold text-slate-700">Total PO</TableHead>
-              <TableHead className="font-semibold text-slate-700">Status</TableHead>
-              <TableHead></TableHead>
+              <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                <div className="flex flex-col items-center justify-center">
+                  <p className="text-lg font-medium text-slate-900 mb-1">Belum ada Purchase Order</p>
+                  <p className="text-sm">Buat PO baru untuk mulai melakukan rekonsiliasi.</p>
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pos.map((po) => {
+          ) : (
+            pos.map((po) => {
               const totalPO = po.totalPO
               const isWaiting = po.status === "WAITING_APPROVAL"
               const isChecked = selected.has(po.id)
@@ -177,12 +186,13 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
                       checked={isChecked}
                       onChange={() => isWaiting ? toggleSelect(po.id) : undefined}
                       disabled={!isWaiting}
+                      aria-label={`Select PO ${po.poNumber}`}
                     />
                   </TableCell>
                   <TableCell className="font-mono text-sm font-medium text-slate-700">{po.poNumber}</TableCell>
                   <TableCell className="font-medium text-slate-800">{po.supplier.name}</TableCell>
-                  <TableCell className="text-slate-600">{format(new Date(po.dateOrdered), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-slate-600">{po.dateReceived ? format(new Date(po.dateReceived), "dd MMM yyyy") : "-"}</TableCell>
+                  <TableCell className="text-slate-600" suppressHydrationWarning>{format(new Date(po.dateOrdered), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-slate-600" suppressHydrationWarning>{po.dateReceived ? format(new Date(po.dateReceived), "dd MMM yyyy") : "-"}</TableCell>
                   <TableCell className="text-right font-semibold text-slate-800">Rp {totalPO.toLocaleString("id-ID")}</TableCell>
                   <TableCell>
                     <Badge variant={variant} className="shadow-sm">{po.status}</Badge>
@@ -194,10 +204,10 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
                   </TableCell>
                 </TableRow>
               )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+            })
+          )}
+        </TableBody>
+      </Table>
     </>
   )
 }

@@ -119,7 +119,6 @@ export default async function PurchaseOrdersPage({
             icon={ShoppingCart}
             title="Tidak ada Purchase Order"
             description={query || statusFilter ? "Coba ubah filter atau kata kunci pencarian." : "Mulai dengan membuat PO pertama ke supplier."}
-            action={!query && !statusFilter ? { label: "Buat PO Baru", onClick: () => window.location.href = "/purchase-orders/new" } : undefined}
           />
         ) : (
           <>

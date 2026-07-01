@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Modal } from "@/components/ui/Modal"
@@ -44,13 +45,13 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
   const [selectedPO, setSelectedPO] = useState<UnpaidPO | null>(null)
   const [invoiceNumber, setInvoiceNumber] = useState("")
   const [amount, setAmount] = useState("")
-  const [dateReceived, setDateReceived] = useState((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })())
+  const [dateReceived, setDateReceived] = useState("")
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
 
   const filteredInvoices = initialInvoices.filter(inv => {
+    if (inv.invoiceNumber === "BELUM ADA INVOICE") return false;
     if (filter === "paid") return inv.po.status === "PAID"
-    if (filter === "unpaid") return inv.po.status !== "PAID" && inv.invoiceNumber !== "BELUM ADA INVOICE"
+    if (filter === "unpaid") return inv.po.status !== "PAID"
     return true
   })
 
@@ -60,15 +61,13 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
       setInvoiceNumber("")
       setAmount(po.suggestedAmount.toString())
     }
-    setDateReceived((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })())
-    setErrorMsg("")
+    setDateReceived("")
     setShowAddModal(true)
   }
 
   const handleSubmitInvoice = async () => {
     if (!selectedPO || !invoiceNumber.trim() || !amount) return
     setLoading(true)
-    setErrorMsg("")
     try {
       const res = await fetch("/api/invoices", {
         method: "POST",
@@ -81,14 +80,15 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
         })
       })
       if (res.ok) {
+        toast.success(`Invoice "${invoiceNumber.trim()}" berhasil disimpan`)
         setShowAddModal(false)
         router.refresh()
       } else {
-        const err = await res.json()
-        setErrorMsg(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
     } catch {
-      setErrorMsg("Gagal menghubungi server")
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -121,7 +121,6 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
       </div>
 
       {/* Invoice Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
@@ -151,7 +150,7 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
                   </TableCell>
                   <TableCell className="font-mono text-sm text-slate-600">{inv.po.poNumber}</TableCell>
                   <TableCell className="text-slate-600">{inv.po.supplier.name}</TableCell>
-                  <TableCell className="text-slate-500">{format(new Date(inv.createdAt), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-slate-500" suppressHydrationWarning>{format(new Date(inv.createdAt), "dd MMM yyyy")}</TableCell>
                   <TableCell className="text-right font-semibold text-slate-800">
                     {isOverdue ? (
                       <span className="text-amber-600">PO Overdue</span>
@@ -176,7 +175,6 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
             )}
           </TableBody>
         </Table>
-      </div>
 
       {/* PO List for quick invoice creation */}
       {unpaidPOs.length > 0 && (
@@ -210,9 +208,6 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
       {showAddModal && selectedPO && (
         <Modal isOpen onClose={() => setShowAddModal(false)} title="Input Invoice">
           <div className="space-y-4">
-            {errorMsg && (
-              <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">{errorMsg}</div>
-            )}
             <div className="rounded-lg bg-slate-50 p-3 border border-slate-200 text-sm">
               <p className="font-medium text-slate-700">PO: {selectedPO.poNumber}</p>
               <p className="text-slate-500">Supplier: {selectedPO.supplier.name}</p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Modal } from "@/components/ui/Modal"
 import { Receipt } from "lucide-react"
@@ -11,13 +12,11 @@ export function MarkPaidButton({ poId }: { poId: string }) {
   const [open, setOpen] = useState(false)
   const [invoiceNumber, setInvoiceNumber] = useState("")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!invoiceNumber.trim()) return
     setLoading(true)
-    setError("")
     try {
       const res = await fetch(`/api/po/${poId}/paid`, {
         method: "POST",
@@ -25,12 +24,15 @@ export function MarkPaidButton({ poId }: { poId: string }) {
         body: JSON.stringify({ invoiceNumber: invoiceNumber.trim() })
       })
       if (res.ok) {
+        toast.success("PO berhasil ditandai lunas")
         setOpen(false)
         router.refresh()
       } else {
-        const err = await res.json()
-        setError(err.error || "Terjadi kesalahan")
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Terjadi kesalahan")
       }
+    } catch {
+      toast.error("Gagal menghubungi server")
     } finally {
       setLoading(false)
     }
@@ -42,11 +44,8 @@ export function MarkPaidButton({ poId }: { poId: string }) {
         <Receipt className="w-4 h-4 mr-2" />
         Tandai Lunas
       </Button>
-      <Modal isOpen={open} onClose={() => { setOpen(false); setInvoiceNumber(""); setError("") }} title="Tandai PO Lunas">
+      <Modal isOpen={open} onClose={() => { setOpen(false); setInvoiceNumber("") }} title="Tandai PO Lunas">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">{error}</div>
-          )}
           <p className="text-sm text-slate-500">Masukkan nomor invoice untuk pencatatan:</p>
           <input
             type="text"
