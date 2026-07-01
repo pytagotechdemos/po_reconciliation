@@ -19,17 +19,21 @@ export function reconcileLineItems(
 ): LineItemDiff[] {
   return lineItems.map((item) => {
     const received = receivedItems.find((r) => r.poLineItemId === item.id);
+
+    // Use accumulated qtyReceived from the DB state, not per-delivery input.
+    // received.qtyReceived is the per-delivery amount for this call only;
+    // item.qtyReceived (from lineItems) already reflects the new accumulated total
+    // after the current goods-receipt write completes.
+    const qtyReceived = Number(item.qtyReceived || 0);
+    const priceInvoice = received?.priceInvoice != null
+      ? received.priceInvoice
+      : Number(item.priceInvoice || item.priceOrdered);
     
-    // Calculate accumulated quantities (if partial deliveries existed, we'd add them here. 
-    // For MVP, we assume qtyReceived from input is the new total received)
-    const qtyReceived = received ? received.qtyReceived : Number(item.qtyReceived || 0);
-    const priceInvoice = received?.priceInvoice ?? Number(item.priceInvoice || item.priceOrdered);
-    
-    const qtyDiff = Number(item.qtyOrdered) - qtyReceived;
-    const priceDiff = priceInvoice - Number(item.priceOrdered);
-    
-    // Value diff = missing qty value + price difference on received items
-    const valueDiff = (qtyDiff * Number(item.priceOrdered)) + (priceDiff * qtyReceived);
+    // Value diff = value of missing units + price difference cost on received units
+    // Only count SHORT-delivery (not over-delivery) for qty loss
+    const qtyDiff = Math.round((Number(item.qtyOrdered) - qtyReceived) * 1000) / 1000;
+    const priceDiff = Math.round((priceInvoice - Number(item.priceOrdered)) * 100) / 100;
+    const valueDiff = Math.round(((Math.max(0, qtyDiff) * Number(item.priceOrdered)) + (priceDiff * qtyReceived)) * 100) / 100;
     
     return {
       itemId: item.id,
@@ -41,7 +45,7 @@ export function reconcileLineItems(
       priceInvoice,
       priceDiff,
       valueDiff,
-      hasDiscrepancy: Math.abs(qtyDiff) > 0 || Math.abs(priceDiff) > 0,
+      hasDiscrepancy: Math.abs(qtyDiff) > 0.0001 || Math.abs(priceDiff) > 0.0001,
     };
   });
 }

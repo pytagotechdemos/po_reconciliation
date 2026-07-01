@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "PO Reconciliation Dashboard",
@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className={inter.className}>
+    <html lang="id" suppressHydrationWarning>
+      <body className={`${outfit.className} bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900`}>
         <Providers>
           {children}
         </Providers>

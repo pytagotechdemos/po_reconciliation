@@ -7,38 +7,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Supplier {
-  id           String          @id @default(cuid())
+model User {
+  id        String     @id @default(cuid())
+  username  String     @unique
+  name      String
+  password  String
+  role      String     // procurement, warehouse, finance, owner
+  auditLogs AuditLog[]
+  createdAt DateTime   @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  entityType  String
+  entityId    String
+  details     String?   @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, createdAt])
+  @@index([createdAt])
+}
+
+model Item {
+  id           String   @id @default(cuid())
+  sku          String   @unique
   name         String
-  contact      String?
-  paymentTerms String?
-  orders       PurchaseOrder[]
-  createdAt    DateTime        @default(now())
+  unit         String
+  category     String?
+  buyPrice     Decimal
+  sellPrice    Decimal?
+  createdAt    DateTime @default(now())
+}
+
+model Supplier {
+  id               String          @id @default(cuid())
+  name             String
+  contact          String?
+  paymentTerms     String?
+  performanceScore Int?            @default(5)
+  orders           PurchaseOrder[]
+  createdAt        DateTime        @default(now())
 }
 
 model PurchaseOrder {
-  id            String         @id @default(cuid())
-  poNumber      String         @unique
-  supplierId    String
-  supplier      Supplier       @relation(fields: [supplierId], references: [id])
-  dateOrdered   DateTime
-  dateExpected  DateTime?
-  dateReceived  DateTime?
-  status        String         @default("DRAFT") // DRAFT, SENT, PARTIAL, RECEIVED, DISCREPANCY, PAID
-  notes         String?
-  lineItems     POLineItem[]
-  goodsReceipts GoodsReceipt[]
-  alerts        Alert[]
-  createdBy     String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id             String         @id @default(cuid())
+  poNumber       String         @unique
+  supplierId     String
+  supplier       Supplier       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  dateOrdered    DateTime
+  dateExpected   DateTime?
+  dateReceived   DateTime?
+  status         String         @default("DRAFT") // WAITING_APPROVAL, SENT, PARTIAL, RECEIVED, DISCREPANCY, READY_TO_PAY, PAID, REJECTED, CANCELLED
+  notes          String?
+  taxRate        Decimal?       @default(0) // Percentage, e.g., 11 for PPN
+  taxAmount      Decimal?       @default(0)
+  lineItems      POLineItem[]
+  goodsReceipts  GoodsReceipt[]
+  alerts         Alert[]
+  invoices       Invoice[]
+  createdBy      String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status])
+  @@index([supplierId])
+  @@index([dateOrdered])
+  @@index([updatedAt])
+  @@index([createdAt])
 }
 
 model POLineItem {
   id           String         @id @default(cuid())
   poId         String
-  po           PurchaseOrder  @relation(fields: [poId], references: [id])
+  po           PurchaseOrder  @relation(fields: [poId], references: [id], onDelete: Cascade)
   itemName     String
+  sku          String?
   unit         String
   qtyOrdered   Decimal
   qtyReceived  Decimal?
@@ -46,28 +93,52 @@ model POLineItem {
   priceInvoice Decimal?
   condition    String?        // OK, DAMAGED, SHORT
   createdAt    DateTime       @default(now())
+
+  @@index([poId])
 }
 
 model GoodsReceipt {
   id                 String        @id @default(cuid())
   poId               String
-  po                 PurchaseOrder @relation(fields: [poId], references: [id])
+  po                 PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
   receiptDate        DateTime
   receivedBy         String
   deliveryNoteNumber String?
-  photoUrl           String?
+  photoUrl           String?       // Simulated upload URL/Base64
+  expiryDate         DateTime?     // For FMCG/Souvenirs
   createdAt          DateTime      @default(now())
+
+  @@index([poId])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  poId          String
+  po            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  invoiceNumber String
+  amount        Decimal
+  dateReceived  DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  @@unique([invoiceNumber])
+  @@unique([poId, invoiceNumber])
+  @@index([poId])
 }
 
 model Alert {
   id             String        @id @default(cuid())
   poId           String
-  po             PurchaseOrder @relation(fields: [poId], references: [id])
-  type           String        // QTY_DISCREPANCY, PRICE_DISCREPANCY
+  po             PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  type           String        // QTY_DISCREPANCY, PRICE_DISCREPANCY, SHORT_EXPIRY
   itemName       String
   valueDiff      Decimal
+  profitLoss     Decimal?      // Analytics: qtyDiff * sellPrice
   acknowledgedBy String?
   acknowledgedAt DateTime?
   resolution     String?       // ACCEPTED, CREDIT_NOTE, HOLD
   createdAt      DateTime      @default(now())
+
+  @@index([poId])
+  @@index([type])
+  @@index([resolution])
 }

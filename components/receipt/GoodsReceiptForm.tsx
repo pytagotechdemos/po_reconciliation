@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { receiptSchema, ReceiptFormValues } from "@/lib/validations"
+import { useSession } from "next-auth/react"
 
 export type SerializedLineItem = {
   id: string
@@ -23,20 +24,24 @@ export type SerializedLineItem = {
 
 export function GoodsReceiptForm({ poId, items }: { poId: string, items: SerializedLineItem[] }) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
-  
+
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm<ReceiptFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(receiptSchema) as any,
     defaultValues: {
-      dateReceived: new Date().toISOString().split('T')[0],
-      receiverName: "admin_gudang",
+      dateReceived: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
+      receiverName: session?.user?.name || "",
       notes: "",
       items: items.map(item => ({
         id: item.id,
         qtyOrdered: Number(item.qtyOrdered),
-        qtyReceived: Number(item.qtyOrdered),
+        // Show remaining qty (ordered - already received) as default; cap at 0 if over-received
+        qtyReceived: Math.max(0, Number(item.qtyOrdered) - Number(item.qtyReceived || 0)),
+        priceInvoice: item.priceInvoice ?? Number(item.priceOrdered),
+        condition: item.condition ?? "OK",
         notes: ""
       }))
     }
@@ -54,25 +59,21 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
     setLoading(true)
     setErrorMsg("")
     try {
-      // Data shape needed by API (which we haven't updated yet, but we will match the old shape for now or update it later)
-      // The old API expects: items: { poLineItemId, qtyReceived, priceInvoice, condition }
-      // We will map our form data to the expected API shape.
-      
+      // Map form data to API shape: { poLineItemId, qtyReceived, priceInvoice, condition }
       const payload = {
         poId,
         receiptDate: data.dateReceived,
         receivedBy: data.receiverName,
-        deliveryNoteNumber: data.notes || "SJ-AUTO",
+        deliveryNoteNumber: null,
+        expiryDate: data.expiryDate,
+        photoUrl: data.photoUrl,
         items: data.items.map((i, index) => {
           const original = items[index];
           return {
             poLineItemId: i.id,
-            itemName: original.itemName,
-            qtyOrdered: original.qtyOrdered,
-            priceOrdered: original.priceOrdered,
             qtyReceived: Number(i.qtyReceived),
-            priceInvoice: original.priceOrdered, // Assuming price doesn't change on receipt for this simplified form
-            condition: "OK"
+            priceInvoice: i.priceInvoice ?? original.priceOrdered,
+            condition: i.condition || "OK"
           }
         })
       }
@@ -124,16 +125,35 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
           />
           {errors.receiverName && <p className="text-red-500 text-xs">{errors.receiverName.message}</p>}
         </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Tanggal Kadaluarsa (Opsional)</label>
+          <Input 
+            type="date" 
+            {...register("expiryDate")}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Foto Surat Jalan (URL / Base64)</label>
+          <Input 
+            type="text"
+            placeholder="https://..."
+            {...register("photoUrl")}
+          />
+        </div>
       </div>
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-slate-900">Konfirmasi Item</h3>
-        <Table>
-          <TableHeader>
+        <div className="rounded-xl border border-slate-200 overflow-x-auto">
+          <Table className="min-w-[600px]">
+            <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
               <TableHead className="text-right">Qty (PO)</TableHead>
+              <TableHead className="text-right">Harga (PO)</TableHead>
               <TableHead className="text-right">Qty Aktual</TableHead>
+              <TableHead className="text-right">Harga Invoice (per unit)</TableHead>
+              <TableHead className="text-center">Kondisi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,21 +165,44 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
               return (
                 <TableRow key={field.id} className={hasDiff ? "bg-amber-50" : ""}>
                   <TableCell className="font-medium">{original.itemName}</TableCell>
-                  <TableCell className="text-right">{original.qtyOrdered}</TableCell>
+                  <TableCell className="text-right">{original.qtyOrdered} {original.unit}</TableCell>
+                  <TableCell className="text-right text-slate-500 text-sm">
+                    Rp {Number(original.priceOrdered).toLocaleString("id-ID")}
+                  </TableCell>
                   <TableCell>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       min="0"
                       className={`text-right ${hasDiff ? 'border-amber-400 focus:ring-amber-400' : ''} ${errors.items?.[index]?.qtyReceived ? 'border-red-500' : ''}`}
                       {...register(`items.${index}.qtyReceived` as const)}
                     />
                     {errors.items?.[index]?.qtyReceived && <p className="text-red-500 text-xs text-right mt-1">{errors.items[index]?.qtyReceived?.message}</p>}
                   </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="text-right"
+                      {...register(`items.${index}.priceInvoice` as const)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <select
+                      className="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      {...register(`items.${index}.condition` as const)}
+                    >
+                      <option value="OK">OK</option>
+                      <option value="DAMAGED">Rusak</option>
+                      <option value="SHORT">Kurang</option>
+                    </select>
+                  </TableCell>
                 </TableRow>
               )
             })}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
         {hasDiscrepancy && (
           <div className="rounded-md bg-amber-50 p-4 border border-amber-200 text-sm text-amber-800 flex items-start gap-3">
             <span className="text-xl leading-none">⚠️</span>

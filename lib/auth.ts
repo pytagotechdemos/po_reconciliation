@@ -12,16 +12,14 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        // Dummy users based on PRD roles
-        const users = {
-          procurement: { id: "1", name: "Procurement User", role: "procurement", password: "password123" },
-          warehouse: { id: "2", name: "Warehouse User", role: "warehouse", password: "password123" },
-          finance: { id: "3", name: "Finance User", role: "finance", password: "password123" },
-        };
+        const { prisma } = await import('@/lib/prisma');
+        const bcrypt = (await import('bcryptjs')).default;
 
-        const user = users[credentials.username as keyof typeof users];
-        
-        if (user && user.password === credentials.password) {
+        const user = await prisma.user.findUnique({
+          where: { username: credentials.username }
+        });
+
+        if (user && await bcrypt.compare(credentials.password, user.password)) {
           return {
             id: user.id,
             name: user.name,
@@ -55,5 +53,8 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "default_secret_key_for_demo_purposes_only",
+  secret: process.env.NEXTAUTH_SECRET ?? (() => {
+    console.warn("[auth] NEXTAUTH_SECRET is not set — using insecure dev fallback. Set it in production.")
+    return "dev-only-insecure-fallback"
+  })(),
 };

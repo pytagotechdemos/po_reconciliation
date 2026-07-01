@@ -15,20 +15,29 @@ type Supplier = {
   name: string
 }
 
-export function POForm({ suppliers }: { suppliers: Supplier[] }) {
+type Item = {
+  sku: string
+  name: string
+  unit: string
+  buyPrice: number | string | { toNumber: () => number }
+}
+
+export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Item[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<POFormValues>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<POFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(poSchema) as any,
     defaultValues: {
       supplierId: "",
-      dateOrdered: new Date().toISOString().split('T')[0],
+      dateOrdered: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
       dateExpected: "",
+      taxRate: 11,
+      taxAmount: 0,
       lineItems: [
-        { itemName: "", unit: "", qty: 1, price: 0 }
+        { itemName: "", sku: "", unit: "", qty: 1, price: 0 }
       ]
     }
   })
@@ -39,12 +48,30 @@ export function POForm({ suppliers }: { suppliers: Supplier[] }) {
   })
 
   const watchLineItems = watch("lineItems")
-  const grandTotal = watchLineItems.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0)
+  const watchTaxRate = watch("taxRate") || 0
+
+  const subtotal = watchLineItems.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0)
+  const taxAmount = (subtotal * watchTaxRate) / 100
+  const grandTotal = subtotal + taxAmount
+
+  const handleItemSelect = (index: number, sku: string) => {
+    const selectedItem = items.find(i => i.sku === sku)
+    if (selectedItem) {
+      setValue(`lineItems.${index}.itemName`, selectedItem.name)
+      setValue(`lineItems.${index}.sku`, selectedItem.sku)
+      setValue(`lineItems.${index}.unit`, selectedItem.unit)
+      setValue(`lineItems.${index}.price`, Number(selectedItem.buyPrice))
+    }
+  }
 
   const onSubmit = async (data: POFormValues) => {
     setLoading(true)
     setErrorMsg("")
     try {
+      // Calculate taxAmount again to be safe
+      const currentSubtotal = data.lineItems.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0)
+      data.taxAmount = (currentSubtotal * (data.taxRate || 0)) / 100
+
       const res = await fetch("/api/po", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,12 +137,13 @@ export function POForm({ suppliers }: { suppliers: Supplier[] }) {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900">Line Items</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Barang / Item</h3>
         {errors.lineItems?.root && <p className="text-red-500 text-xs">{errors.lineItems.root.message}</p>}
-        <Table>
-          <TableHeader>
+        <div className="rounded-xl border border-slate-200 overflow-x-auto">
+          <Table className="min-w-[800px]">
+            <TableHeader>
             <TableRow>
-              <TableHead>Nama Barang</TableHead>
+              <TableHead>Pilih Barang (Master Data)</TableHead>
               <TableHead className="w-24">Satuan</TableHead>
               <TableHead className="w-24 text-right">Qty</TableHead>
               <TableHead className="w-40 text-right">Harga Satuan</TableHead>
@@ -127,18 +155,24 @@ export function POForm({ suppliers }: { suppliers: Supplier[] }) {
             {fields.map((item, index) => (
               <TableRow key={item.id}>
                 <TableCell>
-                  <Input 
-                    placeholder="Nama item..." 
-                    {...register(`lineItems.${index}.itemName` as const)}
-                    className={errors.lineItems?.[index]?.itemName ? 'border-red-500' : ''}
-                  />
+                  <select
+                    className={`flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.lineItems?.[index]?.itemName ? 'border-red-500' : 'border-slate-300'}`}
+                    onChange={(e) => handleItemSelect(index, e.target.value)}
+                    value={watchLineItems[index]?.sku || ""}
+                  >
+                    <option value="">-- Pilih Barang --</option>
+                    {items.map(i => (
+                      <option key={i.sku} value={i.sku}>[{i.sku}] {i.name}</option>
+                    ))}
+                  </select>
                   {errors.lineItems?.[index]?.itemName && <span className="text-[10px] text-red-500">{errors.lineItems[index]?.itemName?.message}</span>}
                 </TableCell>
                 <TableCell>
                   <Input 
+                    readOnly
                     placeholder="Dus/Pack" 
                     {...register(`lineItems.${index}.unit` as const)}
-                    className={errors.lineItems?.[index]?.unit ? 'border-red-500' : ''}
+                    className={`bg-slate-50 ${errors.lineItems?.[index]?.unit ? 'border-red-500' : ''}`}
                   />
                 </TableCell>
                 <TableCell>
@@ -173,15 +207,33 @@ export function POForm({ suppliers }: { suppliers: Supplier[] }) {
             ))}
           </TableBody>
         </Table>
-        <div className="flex justify-between items-center pt-4">
-          <Button type="button" variant="outline" onClick={() => append({ itemName: "", unit: "", qty: 1, price: 0 })}>
+        </div>
+        
+        <div className="flex justify-between items-start pt-4">
+          <Button type="button" variant="outline" onClick={() => append({ itemName: "", sku: "", unit: "-", qty: 1, price: 0 })}>
             + Tambah Item
           </Button>
-          <div className="text-right">
-            <span className="text-slate-500 mr-4">Grand Total:</span>
-            <span className="text-xl font-bold text-slate-900">
-              Rp {grandTotal.toLocaleString("id-ID")}
-            </span>
+          
+          <div className="w-72 space-y-3">
+            <div className="flex justify-between text-slate-600">
+              <span>Subtotal:</span>
+              <span className="font-medium">Rp {subtotal.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span className="flex items-center gap-2">
+                PPN (%)
+                <Input
+                  type="number"
+                  className="w-20 h-8 px-2 py-1 text-right text-sm"
+                  {...register("taxRate")}
+                />
+              </span>
+              <span className="font-medium">Rp {taxAmount.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold text-slate-900 border-t pt-3">
+              <span>Grand Total:</span>
+              <span>Rp {grandTotal.toLocaleString("id-ID")}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -189,7 +241,7 @@ export function POForm({ suppliers }: { suppliers: Supplier[] }) {
       <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
         <Button type="button" variant="outline" onClick={() => router.back()}>Batal</Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Menyimpan..." : "Simpan & Kirim PO"}
+          {loading ? "Menyimpan..." : "Buat PO & Minta Approval"}
         </Button>
       </div>
     </form>

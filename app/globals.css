@@ -13,14 +13,33 @@
   --foreground: #171717;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@media print {
+  /* Hide non-essential elements */
+  aside,
+  header nav,
+  button,
+  a[href]::after {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12px;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* PO Detail print styles */
+  [data-print] {
+    display: block;
   }
 }
