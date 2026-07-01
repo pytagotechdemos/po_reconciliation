@@ -65,7 +65,7 @@ export function Sidebar({ className }: { className?: string }) {
           className
         )}
       >
-        <SidebarInner role={role} roleColors={roleColors} discrepancyCount={discrepancyCount} close={close} collapsed={false} onToggleCollapse={toggleCollapse} />
+        <SidebarInner session={session} role={role} roleColors={roleColors} discrepancyCount={discrepancyCount} close={close} collapsed={false} onToggleCollapse={toggleCollapse} />
       </div>
 
       {/* Desktop sidebar: fixed, collapsible */}
@@ -77,15 +77,17 @@ export function Sidebar({ className }: { className?: string }) {
           className
         )}
       >
-        <SidebarInner role={role} roleColors={roleColors} discrepancyCount={discrepancyCount} close={close} collapsed={isCollapsed} onToggleCollapse={toggleCollapse} />
+        <SidebarInner session={session} role={role} roleColors={roleColors} discrepancyCount={discrepancyCount} close={close} collapsed={isCollapsed} onToggleCollapse={toggleCollapse} />
       </div>
     </>
   )
 }
 
 function SidebarInner({
-  role, roleColors, discrepancyCount, close, collapsed, onToggleCollapse
+  session, role, roleColors, discrepancyCount, close, collapsed, onToggleCollapse
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  session?: any
   role?: string
   roleColors: Record<string, string>
   discrepancyCount: number
@@ -110,17 +112,17 @@ function SidebarInner({
       </div>
 
       {/* Nav */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-5">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-4">
         <NavLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" onClick={close} collapsed={collapsed} />
 
         {visibleSections.map(section => (
           <div key={section.key}>
             {!collapsed && (
-              <div className="px-3 mb-1.5">
-                <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{section.key}</h3>
+              <div className="px-3 mb-1.5 mt-1">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.key}</h3>
               </div>
             )}
-            {collapsed && <div className="h-px bg-slate-100 mx-2 mb-3" />}
+            {collapsed && <div className="h-px bg-slate-100 mx-2 my-2" />}
             {section.items.map(item => (
               <NavLink
                 key={item.href + item.label}
@@ -137,28 +139,29 @@ function SidebarInner({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-200 p-2 space-y-1 shrink-0">
-        <NavLink href="/settings" icon={Settings} label="Pengaturan" onClick={close} collapsed={collapsed} />
-        {!collapsed ? (
-          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 bg-slate-50/80">
-            <User className="h-5 w-5 text-slate-400 shrink-0" />
-            <span className="capitalize truncate">{role || "Guest"}</span>
-          </div>
-        ) : (
+      <div className="border-t border-slate-200 shrink-0">
+        <div className="px-2 pt-2 pb-1">
+          <NavLink href="/settings" icon={Settings} label="Pengaturan" onClick={close} collapsed={collapsed} />
+        </div>
+        <div className="px-3 py-2 flex items-center gap-2.5">
           <div className={cn(
-            "flex items-center justify-center h-10 rounded-xl text-sm font-medium capitalize",
-            role && roleColors[role] ? roleColors[role] : "text-slate-400 bg-slate-50"
+            "flex items-center justify-center h-8 w-8 rounded-lg shrink-0",
+            role && roleColors[role] ? roleColors[role].split(" ")[1] : "bg-slate-100"
           )}>
-            <User className="h-5 w-5" />
+            <User className={cn("h-4 w-4", role && roleColors[role] ? roleColors[role].split(" ")[0] : "text-slate-400")} />
           </div>
-        )}
-
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-700 truncate">{session?.user?.name || "Guest"}</p>
+              <p className="text-[10px] text-slate-400 capitalize">{role || "user"}</p>
+            </div>
+          )}
+        </div>
         <button
           onClick={onToggleCollapse}
-          className="hidden lg:flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          className="hidden lg:flex w-full items-center justify-center gap-1.5 px-3 pb-2.5 text-[11px] font-medium text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors rounded-b-xl"
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          {!collapsed && <span className="text-xs">Ciutkan</span>}
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <><ChevronLeft className="h-3.5 w-3.5" /><span>Ciutkan</span></>}
         </button>
       </div>
     </div>
