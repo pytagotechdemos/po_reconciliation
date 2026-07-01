@@ -19,13 +19,12 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider discrepancyCount={discrepancyCount}>
-      <div className="flex min-h-screen bg-slate-50 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] overflow-hidden">
-        <div className="fixed inset-0 z-[-1] h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30"></div>
+      <div className="flex min-h-screen bg-slate-50 overflow-hidden">
         <Sidebar />
-        <div className="md:ml-60 flex flex-1 flex-col relative z-0 w-full transition-all duration-300 ease-in-out">
+        <div className="flex flex-1 flex-col w-full transition-all duration-300 lg:pl-64">
           <TopBar />
-          <main className="flex-1 p-4 md:p-8 w-full max-w-full overflow-x-hidden">
-            <div className="mx-auto max-w-[1280px]">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-full overflow-x-hidden">
+            <div className="mx-auto max-w-[1400px]">
               {children}
             </div>
           </main>

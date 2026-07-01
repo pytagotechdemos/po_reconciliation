@@ -2,20 +2,21 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "success" | "warning" | "destructive" | "secondary"
+  variant?: "default" | "success" | "warning" | "destructive" | "secondary" | "outline"
 }
 
 function Badge({ className, variant = "default", ...props }: BadgeProps) {
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
         {
-          "border-transparent bg-blue-800 text-white": variant === "default",
-          "border-transparent bg-slate-100 text-slate-500": variant === "secondary", // Paid
-          "border-red-300 bg-red-50 text-red-600": variant === "destructive", // Discrepancy
-          "border-amber-300 bg-amber-50 text-amber-600": variant === "warning", // Partial
-          "border-green-300 bg-green-50 text-green-600": variant === "success", // Received
+          "border border-transparent bg-violet-600 text-white": variant === "default",
+          "border border-transparent bg-slate-100 text-slate-600": variant === "secondary",
+          "border border-red-200 bg-red-50 text-red-600": variant === "destructive",
+          "border border-amber-200 bg-amber-50 text-amber-600": variant === "warning",
+          "border border-green-200 bg-green-50 text-green-600": variant === "success",
+          "border border-slate-200 bg-white text-slate-600": variant === "outline",
         },
         className
       )}

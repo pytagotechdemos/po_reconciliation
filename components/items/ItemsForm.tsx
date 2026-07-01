@@ -87,7 +87,7 @@ export function ItemsForm({ item, onSuccess, onCancel }: ItemsFormProps) {
           <select
             value={category}
             onChange={e => setCategory(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="">Pilih Kategori...</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}

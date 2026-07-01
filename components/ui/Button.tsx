@@ -12,17 +12,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
           {
-            "bg-blue-800 text-white hover:bg-blue-900": variant === "default", // Primary Action #1E40AF -> hover #1D3A9F (Tailwind blue-800/900 is close, but we can customize)
-            "bg-red-600 text-white hover:bg-red-700": variant === "destructive",
-            "border border-slate-200 bg-white hover:bg-slate-100 text-slate-900": variant === "outline",
-            "bg-slate-100 text-slate-900 hover:bg-slate-200": variant === "secondary",
-            "hover:bg-slate-100 hover:text-slate-900": variant === "ghost",
-            "text-blue-800 underline-offset-4 hover:underline": variant === "link",
+            "bg-violet-600 text-white hover:bg-violet-700 shadow-sm": variant === "default",
+            "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm": variant === "destructive",
+            "border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700": variant === "outline",
+            "bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300": variant === "secondary",
+            "hover:bg-slate-100 hover:text-slate-900 text-slate-600": variant === "ghost",
+            "text-violet-600 underline-offset-4 hover:underline font-semibold": variant === "link",
             "h-10 px-4 py-2": size === "default",
             "h-9 rounded-md px-3": size === "sm",
-            "h-11 rounded-md px-8": size === "lg",
+            "h-11 rounded-lg px-6": size === "lg",
             "h-10 w-10": size === "icon",
           },
           className

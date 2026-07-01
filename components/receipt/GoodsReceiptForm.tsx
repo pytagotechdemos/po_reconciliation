@@ -189,7 +189,7 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
                   </TableCell>
                   <TableCell>
                     <select
-                      className="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
                       {...register(`items.${index}.condition` as const)}
                     >
                       <option value="OK">OK</option>

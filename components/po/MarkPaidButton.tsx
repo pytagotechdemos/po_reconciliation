@@ -53,7 +53,7 @@ export function MarkPaidButton({ poId }: { poId: string }) {
             value={invoiceNumber}
             onChange={e => setInvoiceNumber(e.target.value)}
             placeholder="Contoh: INV-20260601"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             required
           />
           <div className="flex justify-end gap-3 pt-2">

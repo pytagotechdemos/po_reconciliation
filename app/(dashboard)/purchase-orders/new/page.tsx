@@ -27,7 +27,7 @@ export default async function NewPurchaseOrderPage() {
         title="Buat Purchase Order Baru" 
         description="Isi form di bawah ini untuk membuat pesanan pembelian baru."
         icon={<FilePlus className="w-8 h-8" />}
-        color="indigo"
+        color="violet"
       />
       
       <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">

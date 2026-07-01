@@ -104,7 +104,7 @@ export function AuditLogsTable({
                 const timer = setTimeout(() => applyFilters({ q: val }), 300)
                 return () => clearTimeout(timer)
               }}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all"
             />
           </div>
 
@@ -113,12 +113,12 @@ export function AuditLogsTable({
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(v => !v)}
-            className={cn("gap-1.5", showFilters && "bg-indigo-50 border-indigo-300 text-indigo-700")}
+            className={cn("gap-1.5", showFilters && "bg-violet-50 border-violet-300 text-violet-700")}
           >
             <Filter className="w-4 h-4" />
             Filter
             {hasActiveFilters && (
-              <span className="bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="bg-violet-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {[action, entity, from, to].filter(Boolean).length}
               </span>
             )}
@@ -144,7 +144,7 @@ export function AuditLogsTable({
               <select
                 value={action}
                 onChange={e => { setAction(e.target.value); applyFilters({ action: e.target.value }) }}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none bg-white"
               >
                 {ACTION_OPTIONS.map(o => (
                   <option key={o} value={o}>{o === "" ? "Semua Aksi" : o}</option>
@@ -156,7 +156,7 @@ export function AuditLogsTable({
               <select
                 value={entity}
                 onChange={e => { setEntity(e.target.value); applyFilters({ entity: e.target.value }) }}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none bg-white"
               >
                 {ENTITY_OPTIONS.map(o => (
                   <option key={o} value={o}>{o === "" ? "Semua Entitas" : o}</option>
@@ -169,7 +169,7 @@ export function AuditLogsTable({
                 type="date"
                 value={from}
                 onChange={e => { setFrom(e.target.value); applyFilters({ from: e.target.value }) }}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
               />
             </div>
             <div>
@@ -178,7 +178,7 @@ export function AuditLogsTable({
                 type="date"
                 value={to}
                 onChange={e => { setTo(e.target.value); applyFilters({ to: e.target.value }) }}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
               />
             </div>
           </div>

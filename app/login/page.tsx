@@ -1,125 +1,170 @@
-"use client";
+"use client"
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2, Eye, EyeOff } from "lucide-react"
+import { motion } from "framer-motion"
+
+const roles = [
+  { value: "procurement", label: "Procurement", desc: "Pengadaan & Pembelian", color: "bg-amber-100 text-amber-700" },
+  { value: "warehouse", label: "Warehouse", desc: "Penerimaan Barang", color: "bg-emerald-100 text-emerald-700" },
+  { value: "finance", label: "Finance", desc: "Keuangan", color: "bg-blue-100 text-blue-700" },
+  { value: "owner", label: "Owner", desc: "Pemilik", color: "bg-violet-100 text-violet-700" },
+]
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [username, setUsername] = useState("procurement");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const [selectedRole, setSelectedRole] = useState("procurement")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!password.trim()) {
-      setError("Kata sandi wajib diisi.");
-      return;
+      setError("Kata sandi wajib diisi.")
+      return
     }
-    setLoading(true);
-    setError("");
+    setLoading(true)
+    setError("")
 
     const res = await signIn("credentials", {
-      username,
+      username: selectedRole,
       password,
       redirect: false,
-    });
+    })
 
     if (res?.error) {
-      setError("Username atau password salah.");
-      setLoading(false);
+      setError("Kata sandi salah.")
+      setLoading(false)
     } else {
-      router.push("/dashboard");
+      router.push("/dashboard")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 relative overflow-hidden">
-      {/* Background Ornaments */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/20 blur-[120px]" />
+      {/* Animated background blobs */}
+      <motion.div
+        animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[-15%] left-[-15%] w-[50%] h-[50%] rounded-full bg-violet-300/20 blur-[120px] pointer-events-none"
+      />
+      <motion.div
+        animate={{ y: [10, -10, 10], x: [5, -5, 5] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-[-15%] right-[-15%] w-[50%] h-[50%] rounded-full bg-purple-300/20 blur-[120px] pointer-events-none"
+      />
+      <motion.div
+        animate={{ opacity: [0.5, 0.8, 0.5] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[60%] left-[10%] w-[20%] h-[20%] rounded-full bg-violet-300/15 blur-[80px] pointer-events-none"
+      />
 
-      <div className="max-w-md w-full relative z-10">
-        <div className="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white/50 p-8 sm:p-10">
-          
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight">Pytagotech</h1>
-            <p className="text-slate-500 mt-2 text-sm">Masuk untuk mengelola rekonsiliasi PO.</p>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="max-w-md w-full relative z-10"
+      >
+        <div className="bg-white rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-slate-200/60 overflow-hidden">
+
+          {/* Header */}
+          <div className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 px-8 py-10 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg mb-4"
+            >
+              <span className="text-2xl font-black text-white">P</span>
+            </motion.div>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">Pytagotech</h1>
+            <p className="text-white/70 mt-1 text-sm font-medium">Sistem Rekonsiliasi PO</p>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-              {error}
-            </div>
-          )}
+          {/* Form */}
+          <div className="px-8 py-8">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-2"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                {error}
+              </motion.div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-slate-700">Peran / Role</label>
-              <div className="relative">
-                <select
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                >
-                  <option value="procurement">Procurement (Pembelian)</option>
-                  <option value="warehouse">Warehouse (Gudang)</option>
-                  <option value="finance">Finance (Keuangan)</option>
-                  <option value="owner">Owner (Pemilik)</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Role selector */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Masuk sebagai</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {roles.map(role => (
+                    <button
+                      key={role.value}
+                      type="button"
+                      onClick={() => setSelectedRole(role.value)}
+                      className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-150 ${
+                        selectedRole === role.value
+                          ? "border-violet-500 bg-violet-50"
+                          : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${role.color}`}>
+                        {role.label}
+                      </span>
+                      <span className="text-[11px] text-slate-500">{role.desc}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-slate-700">Kata Sandi</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Kata Sandi</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400">Default: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-mono">password123</code></p>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-sm font-semibold text-white hover:bg-slate-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_4px_14px_0_rgb(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 active:translate-y-0"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Memproses...
-                </>
-              ) : "Masuk"}
-            </button>
-          </form>
-          
-          <div className="mt-8 text-center text-xs text-slate-400">
-            &copy; 2026 Pytagotech Internal System.
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-3.5 text-sm font-bold text-white hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : "Masuk"}
+              </button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
+              &copy; 2026 Pytagotech Internal System
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
-  );
+  )
 }

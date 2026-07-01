@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${outfit.className} bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900`}>
+      <body className={`${outfit.className} bg-slate-50 text-slate-900 selection:bg-violet-100 selection:text-violet-900`}>
         <Providers>
           {children}
         </Providers>

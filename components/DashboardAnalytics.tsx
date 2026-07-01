@@ -148,7 +148,7 @@ export function DashboardAnalytics({ topItems, topSuppliers, agingPOs }: Dashboa
                     </div>
                     <Link
                       href={`/purchase-orders?q=${encodeURIComponent(sup.supplierName)}`}
-                      className="flex-shrink-0 text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                      className="flex-shrink-0 text-xs text-violet-500 hover:text-violet-700 font-medium"
                     >
                       Lihat PO
                     </Link>

@@ -84,7 +84,7 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
     <>
       {/* Bulk Action Bar */}
       {selected.size > 0 && (
-        <div className="bg-indigo-600 text-white rounded-xl p-4 flex items-center justify-between shadow-lg">
+        <div className="bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl p-4 flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-3">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">{selected.size} PO dipilih</span>
@@ -113,7 +113,7 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
               size="sm"
               onClick={() => handleBulkAction("approve")}
               disabled={loading !== null}
-              className="bg-white text-indigo-700 hover:bg-slate-100"
+              className="bg-white text-violet-700 hover:bg-slate-100"
             >
               {loading === "approve" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-1" />}
               Setujui
@@ -165,9 +165,9 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
                 <TableRow
                   key={po.id}
                   className={cn(
-                    "transition-colors hover:bg-slate-50",
+                    "transition-colors",
                     po.status === "DISCREPANCY" ? "bg-rose-50/30 hover:bg-rose-50/70" : "",
-                    isChecked && isWaiting ? "bg-indigo-50" : ""
+                    isChecked && isWaiting ? "bg-violet-50" : ""
                   )}
                 >
                   <TableCell>
@@ -189,7 +189,7 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
                   </TableCell>
                   <TableCell className="text-right">
                     <Link href={`/purchase-orders/${po.id}`}>
-                      <Button variant="outline" size="sm" className="hover:bg-slate-100 hover:text-indigo-600 border-slate-200">Detail</Button>
+                      <Button variant="outline" size="sm" className="hover:bg-violet-50 hover:text-violet-600 border-slate-200">Detail</Button>
                     </Link>
                   </TableCell>
                 </TableRow>

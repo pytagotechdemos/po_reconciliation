@@ -5,6 +5,8 @@ import { DashboardCharts } from "@/components/DashboardCharts"
 import { DashboardAnalytics } from "@/components/DashboardAnalytics"
 import { TrendingUp, DollarSign, Activity, LayoutDashboard, Package, Truck, AlertTriangle, History, Clock } from "lucide-react"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { Card, CardContent } from "@/components/ui/Card"
+import { PageTransition } from "@/components/ui/PageTransition"
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -182,105 +184,114 @@ export default async function DashboardPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Dashboard Overview" 
+    <PageTransition>
+    <div className="space-y-5 sm:space-y-6">
+      <PageHeader
+        title="Dashboard Overview"
         description="Ringkasan aktivitas dan performa pembelian perusahaan."
         icon={<LayoutDashboard className="w-8 h-8" />}
-        color="indigo"
+        color="violet"
       />
 
       {isOwner && (
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-slate-800 mb-4 tracking-tight">Financial Overview (Owner)</h3>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Total Spending */}
-            <div className="flex flex-col rounded-2xl border border-indigo-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Spending</span>
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500">
-                  <DollarSign className="w-5 h-5" />
+        <div className="mb-2">
+          <h3 className="text-base font-bold text-slate-700 mb-4 tracking-tight uppercase text-xs text-slate-400">Financial Overview</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card hover className="border-violet-100">
+              <CardContent className="p-5 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Spending</span>
+                  <div className="p-2 bg-violet-50 rounded-lg text-violet-500">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
                 </div>
-              </div>
-              <span className="mt-4 text-3xl font-bold text-slate-900">
-                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(computedSpending)}
-              </span>
-            </div>
+                <span className="text-2xl font-bold text-slate-900 leading-tight">
+                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(computedSpending)}
+                </span>
+                <span className="text-xs text-slate-400">Bulan ini</span>
+              </CardContent>
+            </Card>
 
-            {/* Discrepancy Rate */}
-            <div className="flex flex-col rounded-2xl border border-rose-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Discrepancy Rate</span>
-                <div className="p-2 bg-rose-50 rounded-lg text-rose-500">
-                  <Activity className="w-5 h-5" />
+            <Card hover className="border-rose-100">
+              <CardContent className="p-5 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Discrepancy Rate</span>
+                  <div className="p-2 bg-rose-50 rounded-lg text-rose-500">
+                    <Activity className="w-4 h-4" />
+                  </div>
                 </div>
-              </div>
-              <span className="mt-4 text-3xl font-bold text-rose-600">
-                {totalPO > 0 ? ((discrepancyThisMonth / totalPO) * 100).toFixed(1) : "0.0"}%
-              </span>
-            </div>
+                <span className="text-2xl font-bold text-rose-600 leading-tight">
+                  {totalPO > 0 ? ((discrepancyThisMonth / totalPO) * 100).toFixed(1) : "0.0"}%
+                </span>
+                <span className="text-xs text-slate-400">{discrepancyThisMonth} PO bulan ini</span>
+              </CardContent>
+            </Card>
 
-            {/* Total POs */}
-            <div className="flex flex-col rounded-2xl border border-emerald-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total POs</span>
-                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-500">
-                  <TrendingUp className="w-5 h-5" />
+            <Card hover className="border-emerald-100">
+              <CardContent className="p-5 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total PO</span>
+                  <div className="p-2 bg-emerald-50 rounded-lg text-emerald-500">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
                 </div>
-              </div>
-              <span className="mt-4 text-3xl font-bold text-emerald-600">
-                {totalPO} Orders
-              </span>
-            </div>
+                <span className="text-2xl font-bold text-emerald-600 leading-tight">{totalPO}</span>
+                <span className="text-xs text-slate-400">Bulan ini</span>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Total PO */}
-        <div className="group relative flex flex-col rounded-2xl border border-indigo-100 bg-white/70 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total PO Bulan Ini</span>
-            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-300">
-              <Package className="w-5 h-5" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card hover className="border-violet-100">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">PO Baru</span>
+              <div className="p-1.5 bg-violet-50 rounded-lg text-violet-500">
+                <Package className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
-          <span className="mt-4 text-4xl font-bold text-slate-900">{totalPO}</span>
-        </div>
-        
-        {/* Card 2: Sudah Diterima */}
-        <div className="group relative flex flex-col rounded-2xl border border-emerald-100 bg-white/70 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sudah Diterima</span>
-            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-              <Truck className="w-5 h-5" />
-            </div>
-          </div>
-          <span className="mt-4 text-4xl font-bold text-slate-900">{totalReceived}</span>
-        </div>
+            <span className="text-2xl sm:text-3xl font-bold text-slate-900">{totalPO}</span>
+          </CardContent>
+        </Card>
 
-        {/* Card 3: Discrepancy */}
-        <div className="group relative flex flex-col rounded-2xl border border-rose-100 bg-white/70 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Discrepancy</span>
-            <div className="p-2 bg-rose-50 rounded-lg text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors duration-300">
-              <AlertTriangle className="w-5 h-5" />
+        <Card hover className="border-emerald-100">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Diterima</span>
+              <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-500">
+                <Truck className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
-          <span className="mt-4 text-4xl font-bold text-rose-600">{discrepancyThisMonth}</span>
-        </div>
+            <span className="text-2xl sm:text-3xl font-bold text-emerald-600">{totalReceived}</span>
+          </CardContent>
+        </Card>
 
-        {/* Card 4: Menunggu Pembayaran */}
-        <div className="group relative flex flex-col rounded-2xl border border-amber-100 bg-white/70 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-           <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Menunggu Pemb.</span>
-            <div className="p-2 bg-amber-50 rounded-lg text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
-              <Clock className="w-5 h-5" />
+        <Card hover className="border-rose-100">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Discrepancy</span>
+              <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500">
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
-          <span className="mt-4 text-4xl font-bold text-slate-900">{totalPendingPayment}</span>
-        </div>
+            <span className="text-2xl sm:text-3xl font-bold text-rose-600">{discrepancyThisMonth}</span>
+          </CardContent>
+        </Card>
+
+        <Card hover className="border-amber-100">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Menunggu Bayar</span>
+              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-500">
+                <Clock className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <span className="text-2xl sm:text-3xl font-bold text-slate-900">{totalPendingPayment}</span>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -294,37 +305,39 @@ export default async function DashboardPage() {
         </div>
         
         {/* Audit Trail */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <History className="h-5 w-5 text-slate-400" />
-            <h3 className="font-bold text-slate-900">Aktivitas Terkini</h3>
-          </div>
-          
-          <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                <div className="flex items-center justify-center w-5 h-5 rounded-full border border-white bg-slate-200 group-hover:bg-indigo-500 text-slate-500 group-hover:text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm transition-colors duration-300 ml-[-9px] md:ml-0 z-10">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-white" />
-                </div>
-                
-                <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-slate-100 bg-slate-50/50 group-hover:bg-white shadow-sm transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-slate-900">{activity.poNumber}</span>
-                    <span className="text-[10px] font-medium text-slate-400">
-                      {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(activity.updatedAt)}
-                    </span>
+        <Card padding="none">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
+              <History className="h-4 w-4 text-violet-500" />
+              <h3 className="font-bold text-slate-800 text-sm">Aktivitas Terkini</h3>
+            </div>
+
+            <div className="space-y-5 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="relative flex items-start gap-3">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-slate-200 shrink-0 mt-0.5 z-10 shadow-sm">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Status diperbarui menjadi <strong className="text-slate-700">{activity.status}</strong> untuk supplier {activity.supplier.name}.
-                  </p>
+
+                  <div className="flex-1 min-w-0 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white transition-colors">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="font-semibold text-xs text-slate-800 truncate">{activity.poNumber}</span>
+                      <span className="text-[10px] text-slate-400 shrink-0">
+                        {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(activity.updatedAt)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Status: <strong className="text-slate-700">{activity.status}</strong> — {activity.supplier.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {recentActivity.length === 0 && (
-              <div className="text-sm text-slate-500 text-center py-4">Belum ada aktivitas.</div>
-            )}
-          </div>
-        </div>
+              ))}
+              {recentActivity.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">Belum ada aktivitas.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Discrepancy Analytics + Aging Alerts */}
@@ -336,5 +349,6 @@ export default async function DashboardPage() {
         />
       )}
     </div>
+    </PageTransition>
   )
 }

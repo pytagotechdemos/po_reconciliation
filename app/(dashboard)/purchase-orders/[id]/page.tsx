@@ -55,7 +55,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         title={po.poNumber} 
         description={`Dipesan dari ${po.supplier.name}`}
         icon={<FileText className="w-8 h-8" />}
-        color="indigo"
+        color="violet"
         actions={
           <>
             <PrintButton />
@@ -66,7 +66,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
             
             {["SENT", "PARTIAL"].includes(po.status) && isWarehouse && (
               <Link href={`/purchase-orders/${po.id}/receive`}>
-                <Button className="bg-white text-indigo-700 hover:bg-indigo-50 shadow-md font-semibold transition-all">
+                <Button className="shadow-sm font-semibold hover:bg-violet-50 hover:text-violet-700">
                   <PackagePlus className="w-4 h-4 mr-2" /> Input Penerimaan
                 </Button>
               </Link>

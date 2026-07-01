@@ -54,7 +54,7 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
         <select
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
         >
           {statuses.map(s => (
             <option key={s} value={s}>{s === "ALL" ? "Semua Status" : s.replace(/_/g, " ")}</option>

@@ -31,7 +31,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Navigation Sidebar */}
         <div className="space-y-1">
-          <button className="flex w-full items-center gap-3 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm font-medium text-indigo-600">
+          <button className="flex w-full items-center gap-3 rounded-lg bg-violet-50 px-3 py-2.5 text-sm font-medium text-violet-600">
             <User className="h-4 w-4" />
             Profil Pengguna
           </button>
@@ -55,7 +55,7 @@ export default function SettingsPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-4 pb-4">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-sm">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-sm">
                   {session?.user?.name?.charAt(0) || "U"}
                 </div>
                 <div>

@@ -35,7 +35,7 @@ export function POFilters() {
         <select
           value={currentStatus}
           onChange={handleStatusChange}
-          className="w-full h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
         >
           <option value="ALL">Semua Status</option>
           <option value="WAITING_APPROVAL">Menunggu Approval</option>
@@ -53,7 +53,7 @@ export function POFilters() {
           type="date"
           value={dateFrom}
           onChange={e => updateParam("from", e.target.value)}
-          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           title="Dari tanggal"
         />
         <span className="text-slate-400 text-xs">—</span>
@@ -61,7 +61,7 @@ export function POFilters() {
           type="date"
           value={dateTo}
           onChange={e => updateParam("to", e.target.value)}
-          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           title="Sampai tanggal"
         />
       </div>

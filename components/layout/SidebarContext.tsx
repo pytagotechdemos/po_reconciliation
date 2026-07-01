@@ -4,8 +4,10 @@ import React, { createContext, useContext, useState } from 'react';
 
 type SidebarContextType = {
   isOpen: boolean;
+  isCollapsed: boolean;
   toggle: () => void;
   close: () => void;
+  toggleCollapse: () => void;
   discrepancyCount: number;
 };
 
@@ -19,11 +21,13 @@ export function SidebarProvider({
   discrepancyCount?: number
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const toggle = () => setIsOpen(!isOpen);
   const close = () => setIsOpen(false);
+  const toggleCollapse = () => setIsCollapsed(prev => !prev);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggle, close, discrepancyCount }}>
+    <SidebarContext.Provider value={{ isOpen, isCollapsed, toggle, close, toggleCollapse, discrepancyCount }}>
       {children}
     </SidebarContext.Provider>
   );

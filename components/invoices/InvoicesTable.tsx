@@ -106,7 +106,7 @@ export function InvoicesTable({ initialInvoices, unpaidPOs }: InvoicesTableProps
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-md transition-all",
                 filter === tab
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-violet-600 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               )}
             >

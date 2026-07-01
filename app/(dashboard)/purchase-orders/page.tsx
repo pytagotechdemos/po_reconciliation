@@ -7,6 +7,7 @@ import { Pagination } from "@/components/ui/Pagination"
 import { ExportButton } from "@/components/ExportButton"
 import { POFilters } from "@/components/POFilters"
 import { PurchaseOrdersTable } from "@/components/po/PurchaseOrdersTable"
+import { EmptyState } from "@/components/ui/EmptyState"
 import { ShoppingCart, Plus } from "lucide-react"
 
 const ITEMS_PER_PAGE = 10
@@ -90,15 +91,15 @@ export default async function PurchaseOrdersPage({
   })
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-5 sm:space-y-6">
       <PageHeader
         title="Daftar Purchase Order"
         description="Kelola dan pantau semua pesanan pembelian ke supplier."
-        icon={<ShoppingCart className="w-8 h-8" />}
-        color="blue"
+        icon={<ShoppingCart className="w-7 h-7" />}
+        color="violet"
         actions={
           <Link href="/purchase-orders/new">
-            <Button className="bg-white text-blue-700 hover:bg-blue-50 hover:text-blue-800 shadow-md font-semibold transition-all">
+            <Button className="shadow-sm font-semibold">
               <Plus className="w-4 h-4 mr-2" />
               Buat PO Baru
             </Button>
@@ -106,36 +107,26 @@ export default async function PurchaseOrdersPage({
         }
       />
 
-      <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4">
-        <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <POFilters />
           <ExportButton data={exportData} filename={`purchase_orders_${format(new Date(), 'yyyy-MM-dd')}.csv`} />
         </div>
 
         {pos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-300">
-            <span className="text-5xl mb-4 opacity-80">📋</span>
-            <h3 className="text-lg font-bold text-slate-800">Tidak ada Purchase Order ditemukan</h3>
-            {query || statusFilter ? (
-              <p className="mt-2 text-sm text-slate-500">Coba ubah kata kunci atau filter status Anda.</p>
-            ) : (
-              <>
-                <p className="mt-2 text-sm text-slate-500">Mulai dengan membuat PO pertama ke supplier.</p>
-                <Link href="/purchase-orders/new" className="mt-6">
-                  <Button className="bg-indigo-600">Buat PO Baru</Button>
-                </Link>
-              </>
-            )}
-          </div>
+          <EmptyState
+            icon={ShoppingCart}
+            title="Tidak ada Purchase Order"
+            description={query || statusFilter ? "Coba ubah filter atau kata kunci pencarian." : "Mulai dengan membuat PO pertama ke supplier."}
+            action={!query && !statusFilter ? { label: "Buat PO Baru", onClick: () => window.location.href = "/purchase-orders/new" } : undefined}
+          />
         ) : (
           <>
-            <PurchaseOrdersTable
-              pos={serializedPOs}
-            />
-            <div className="flex justify-between items-center p-4 border-t border-slate-200 bg-white">
-              <div className="text-sm text-slate-500 font-medium">
-                Menampilkan halaman {currentPage} dari {totalPages || 1}
-              </div>
+            <PurchaseOrdersTable pos={serializedPOs} />
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-1 py-3 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                {totalItems} total — halaman {currentPage} dari {totalPages || 1}
+              </span>
               <Pagination totalPages={totalPages} />
             </div>
           </>
