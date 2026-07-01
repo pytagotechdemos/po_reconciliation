@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import Link from "next/link"
 import { Suspense } from "react"
 import { Button } from "@/components/ui/Button"
@@ -24,6 +26,9 @@ export default async function PurchaseOrdersPage({
     to?: string;
   };
 }) {
+  const session = await getServerSession(authOptions)
+  const canCreatePO = session?.user?.role === "procurement" || session?.user?.role === "owner"
+
   const query = searchParams?.q || ""
   const currentPage = Number(searchParams?.page) || 1
   const statusFilter = searchParams?.status || ""
@@ -99,12 +104,14 @@ export default async function PurchaseOrdersPage({
         icon={<ShoppingCart className="w-7 h-7" />}
         color="violet"
         actions={
-          <Link href="/purchase-orders/new">
-            <Button className="shadow-sm font-semibold">
-              <Plus className="w-4 h-4 mr-2" />
-              Buat PO Baru
-            </Button>
-          </Link>
+          canCreatePO ? (
+            <Link href="/purchase-orders/new">
+              <Button className="shadow-sm font-semibold">
+                <Plus className="w-4 h-4 mr-2" />
+                Buat PO Baru
+              </Button>
+            </Link>
+          ) : undefined
         }
       />
 
