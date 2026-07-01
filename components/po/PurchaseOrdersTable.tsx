@@ -168,7 +168,8 @@ export function PurchaseOrdersTable({ pos }: { pos: PO[] }) {
               if (po.status === "DISCREPANCY") variant = "destructive"
               if (po.status === "READY_TO_PAY") variant = "warning"
               if (po.status === "PAID") variant = "secondary"
-              if (po.status === "REJECTED" || po.status === "CANCELLED") variant = "secondary"
+              if (po.status === "REJECTED") variant = "destructive"
+              if (po.status === "CANCELLED") variant = "secondary"
 
               return (
                 <TableRow

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
@@ -27,6 +27,7 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
   const router = useRouter()
   const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
+  const [sjDuplicateWarning, setSjDuplicateWarning] = useState<string | null>(null)
 
   const { register, control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<ReceiptFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,6 +64,30 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
 
   const watchItems = watch("items")
   const hasDiscrepancy = watchItems.some(i => Number(i.qtyReceived) !== i.qtyOrdered)
+  const hasOverDelivery = watchItems.some((i, idx) => {
+    const original = items[idx]
+    return Number(i.qtyReceived) > original.qtyOrdered
+  })
+
+  // Debounced duplicate delivery note check
+  const checkDuplicateSJ = useCallback(async (sj: string) => {
+    if (!sj.trim()) { setSjDuplicateWarning(null); return }
+    try {
+      const res = await fetch(`/api/goods-receipt/check-duplicate?poId=${poId}&sj=${encodeURIComponent(sj)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSjDuplicateWarning(data.isDuplicate ? "⚠️ Surat jalan ini sudah pernah diinput untuk PO ini!" : null)
+      }
+    } catch { /* ignore */ }
+  }, [poId])
+
+  const sjDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const watchSj = watch("deliveryNoteNumber")
+  useEffect(() => {
+    if (sjDebounceRef.current) clearTimeout(sjDebounceRef.current)
+    sjDebounceRef.current = setTimeout(() => checkDuplicateSJ(watchSj || ""), 500)
+    return () => { if (sjDebounceRef.current) clearTimeout(sjDebounceRef.current) }
+  }, [watchSj, checkDuplicateSJ])
 
   const onSubmit = async (data: ReceiptFormValues) => {
     setLoading(true)
@@ -134,6 +159,9 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
             placeholder="Contoh: SJ-20260701-001"
             {...register("deliveryNoteNumber")}
           />
+          {sjDuplicateWarning && (
+            <p className="text-amber-600 text-xs font-medium">{sjDuplicateWarning}</p>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Tanggal Kadaluarsa (Opsional)</label>
@@ -169,10 +197,13 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
             {fields.map((field, index) => {
               const original = items[index];
               const currentQty = Number(watchItems[index]?.qtyReceived || 0);
+              const remainingQty = original.qtyOrdered - (original.qtyReceived || 0);
+              const isOverDelivery = currentQty > original.qtyOrdered;
+              const isUnderDelivery = currentQty < original.qtyOrdered && currentQty > 0;
               const hasDiff = currentQty !== original.qtyOrdered;
 
               return (
-                <TableRow key={field.id} className={hasDiff ? "bg-amber-50" : ""}>
+                <TableRow key={field.id} className={isOverDelivery ? "bg-red-50" : hasDiff ? "bg-amber-50" : ""}>
                   <TableCell className="font-medium">{original.itemName}</TableCell>
                   <TableCell className="text-right">{original.qtyOrdered} {original.unit}</TableCell>
                   <TableCell className="text-right text-slate-500 text-sm">
@@ -182,10 +213,15 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
                     <Input
                       type="number"
                       min="0"
-                      className={`text-right ${hasDiff ? 'border-amber-400 focus:ring-amber-400' : ''} ${errors.items?.[index]?.qtyReceived ? 'border-red-500' : ''}`}
+                      className={`text-right ${isOverDelivery ? 'border-red-400 focus:ring-red-400' : isUnderDelivery ? 'border-amber-400 focus:ring-amber-400' : ''} ${errors.items?.[index]?.qtyReceived ? 'border-red-500' : ''}`}
                       {...register(`items.${index}.qtyReceived` as const)}
                       aria-label="Qty Aktual"
                     />
+                    {isOverDelivery && (
+                      <p className="text-red-500 text-xs text-right mt-1 font-medium">
+                        ⚠️ Melebihi jumlah pesanan (+{currentQty - original.qtyOrdered})
+                      </p>
+                    )}
                     {errors.items?.[index]?.qtyReceived && <p className="text-red-500 text-xs text-right mt-1">{errors.items[index]?.qtyReceived?.message}</p>}
                   </TableCell>
                   <TableCell>
@@ -214,7 +250,13 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
             })}
             </TableBody>
           </Table>
-        {hasDiscrepancy && (
+        {hasOverDelivery && (
+          <div className="rounded-md bg-red-50 p-4 border border-red-200 text-sm text-red-800 flex items-start gap-3">
+            <span className="text-xl leading-none">🚫</span>
+            <p><strong>Perhatian:</strong> Terdapat item yang melebihi jumlah pesanan. PO ini akan ditandai <strong>DISCREPANCY</strong> dan harus ditinjau oleh Keuangan.</p>
+          </div>
+        )}
+        {hasDiscrepancy && !hasOverDelivery && (
           <div className="rounded-md bg-amber-50 p-4 border border-amber-200 text-sm text-amber-800 flex items-start gap-3">
             <span className="text-xl leading-none">⚠️</span>
             <p><strong>Perhatian:</strong> Terdapat selisih antara jumlah pesanan dan aktual. PO ini akan ditandai dengan status <strong>DISCREPANCY</strong> dan dilaporkan ke bagian Keuangan.</p>

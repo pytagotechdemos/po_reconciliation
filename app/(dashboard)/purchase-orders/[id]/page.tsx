@@ -58,8 +58,8 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
 
   // PO can be edited if procurement/owner AND in DRAFT or WAITING_APPROVAL
   const canEdit = (isProcurement || isOwner) && ["DRAFT", "WAITING_APPROVAL"].includes(po.status)
-  // PO can be cancelled if procurement/owner AND before goods receipt (DRAFT, WAITING_APPROVAL, SENT)
-  const canCancel = (isProcurement || isOwner) && ["DRAFT", "WAITING_APPROVAL", "SENT"].includes(po.status)
+  // PO can be cancelled if procurement/owner AND in cancellable state (DRAFT, WAITING_APPROVAL, SENT, REJECTED)
+  const canCancel = (isProcurement || isOwner) && ["DRAFT", "WAITING_APPROVAL", "SENT", "REJECTED"].includes(po.status)
 
   return (
     <div className="space-y-6">

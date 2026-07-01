@@ -31,8 +31,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         )
       }
 
-      // Only DRAFT, WAITING_APPROVAL, SENT can be cancelled
-      if (!["DRAFT", "WAITING_APPROVAL", "SENT"].includes(po.status)) {
+      // Only DRAFT, WAITING_APPROVAL, SENT, REJECTED can be cancelled
+      if (!["DRAFT", "WAITING_APPROVAL", "SENT", "REJECTED"].includes(po.status)) {
         throw Object.assign(
           new Error(`PO tidak bisa dibatalkan. Status saat ini: ${po.status}.`),
           { status: 400 }

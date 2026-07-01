@@ -144,7 +144,6 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-slate-400">Default: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-mono">password123</code></p>
               </div>
 
               <button

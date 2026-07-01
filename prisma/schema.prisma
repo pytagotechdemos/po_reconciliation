@@ -61,7 +61,7 @@ model PurchaseOrder {
   dateOrdered    DateTime
   dateExpected   DateTime?
   dateReceived   DateTime?
-  status         String         @default("DRAFT") // WAITING_APPROVAL, SENT, PARTIAL, RECEIVED, DISCREPANCY, READY_TO_PAY, PAID, REJECTED, CANCELLED
+  status         String         @default("WAITING_APPROVAL") // WAITING_APPROVAL, SENT, PARTIAL, RECEIVED, DISCREPANCY, READY_TO_PAY, PAID, REJECTED, CANCELLED
   notes          String?
   taxRate        Decimal?       @default(0) // Percentage, e.g., 11 for PPN
   taxAmount      Decimal?       @default(0)
