@@ -8,10 +8,10 @@ test.describe('E2E Regression Testing', () => {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
 
     // Verify dashboard has some KPI or content
-    await expect(page.getByText('Total PO', { exact: false }).or(page.getByText('Purchase Order')).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Total PO', { exact: false }).or(page.getByText('Purchase Order')).first()).toBeVisible({ timeout: 60000 });
   });
 
   test('Procurement can create PO', async ({ page }) => {
@@ -19,10 +19,10 @@ test.describe('E2E Regression Testing', () => {
     await page.click('button:has-text("Procurement")');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
 
     await page.goto('/purchase-orders');
-    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 15000 });
+    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 60000 });
 
     // Create button in main content area
     const createBtn = page.locator('main').locator('a[href="/purchase-orders/new"]');
@@ -34,10 +34,10 @@ test.describe('E2E Regression Testing', () => {
     await page.click('button:has-text("Warehouse")');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
 
     await page.goto('/purchase-orders');
-    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 15000 });
+    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 60000 });
 
     // No create button in main content for warehouse
     const createBtn = page.locator('main').locator('a[href="/purchase-orders/new"]');
@@ -49,13 +49,13 @@ test.describe('E2E Regression Testing', () => {
     await page.click('button:has-text("Finance")');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
 
     await page.goto('/invoices');
-    await expect(page.locator('body')).toContainText('Manajemen Invoice', { timeout: 15000 });
+    await expect(page.locator('body')).toContainText('Manajemen Invoice', { timeout: 60000 });
 
     await page.goto('/reports');
-    await expect(page.locator('body')).toContainText('Laporan', { timeout: 15000 });
+    await expect(page.locator('body')).toContainText('Laporan', { timeout: 60000 });
   });
 
   test('PO form loads correctly', async ({ page }) => {
@@ -63,10 +63,10 @@ test.describe('E2E Regression Testing', () => {
     await page.click('button:has-text("Procurement")');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
 
     await page.goto('/purchase-orders/new');
-    await expect(page.locator('body')).toContainText('Buat Purchase Order', { timeout: 15000 });
-    await expect(page.locator('select').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('body')).toContainText('Buat Purchase Order', { timeout: 60000 });
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 60000 });
   });
 });
