@@ -1,60 +1,84 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
 import { ItemCombobox } from "@/components/ui/ItemCombobox"
-import { Trash2 } from "lucide-react"
+import { Trash2, AlertCircle } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { poSchema, POFormValues } from "@/lib/validations"
+import { z } from "zod"
 
-type Supplier = {
-  id: string
-  name: string
+const editLineItemSchema = z.object({
+  id: z.string().optional(),
+  itemName: z.string().min(1, "Nama item wajib diisi"),
+  sku: z.string().optional(),
+  unit: z.string().min(1, "Satuan wajib diisi"),
+  qty: z.coerce.number().min(1, "Minimal 1"),
+  price: z.coerce.number().min(0),
+})
+
+const editPoSchema = z.object({
+  supplierId: z.string().min(1),
+  dateOrdered: z.string().min(1),
+  dateExpected: z.string().optional(),
+  notes: z.string().optional(),
+  taxRate: z.coerce.number().min(0).optional(),
+  taxAmount: z.coerce.number().min(0).optional(),
+  lineItems: z.array(editLineItemSchema).min(1),
+})
+
+type EditPOValues = z.infer<typeof editPoSchema>
+
+type Supplier = { id: string; name: string }
+type Item = { sku: string; name: string; unit: string; buyPrice: number | string | { toNumber: () => number } }
+type LineItem = { id: string; itemName: string; sku: string; unit: string; qty: number; price: number }
+
+type EditPOFormProps = {
+  poId: string
+  poData: {
+    supplierId: string
+    supplierName: string
+    dateOrdered: string
+    dateExpected: string | null
+    notes: string
+    taxRate: number
+    taxAmount: number
+    lineItems: LineItem[]
+  }
+  suppliers: Supplier[]
+  items: Item[]
+  onCancel: () => void
 }
 
-type Item = {
-  sku: string
-  name: string
-  unit: string
-  buyPrice: number | string | { toNumber: () => number }
-}
-
-export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Item[] }) {
+export function EditPOForm({ poId, poData, suppliers, items, onCancel }: EditPOFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const { register, control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<POFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(poSchema) as any,
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<EditPOValues>({
+    resolver: zodResolver(editPoSchema) as Parameters<typeof zodResolver>[0] extends never ? never : Parameters<typeof zodResolver>[0] extends infer T ? T extends (...args: unknown[]) => unknown ? Parameters<T>[1] : never : never,
     defaultValues: {
-      supplierId: "",
-      dateOrdered: "",
-      dateExpected: "",
-      taxRate: 11,
-      taxAmount: 0,
-      lineItems: [
-        { itemName: "", sku: "", unit: "", qty: 1, price: 0 }
-      ]
+      supplierId: poData.supplierId,
+      dateOrdered: poData.dateOrdered,
+      dateExpected: poData.dateExpected || "",
+      notes: poData.notes || "",
+      taxRate: poData.taxRate,
+      taxAmount: poData.taxAmount,
+      lineItems: poData.lineItems.map(li => ({
+        id: li.id,
+        itemName: li.itemName,
+        sku: li.sku,
+        unit: li.unit,
+        qty: li.qty,
+        price: li.price,
+      })),
     }
   })
 
-  useEffect(() => {
-    if (!getValues("dateOrdered")) {
-      const d = new Date()
-      setValue("dateOrdered", `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
-    }
-  }, [getValues, setValue])
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "lineItems"
-  })
-
+  const { fields, append, remove } = useFieldArray({ control, name: "lineItems" })
   const watchLineItems = watch("lineItems")
   const watchTaxRate = watch("taxRate") || 0
 
@@ -72,21 +96,21 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
     }
   }
 
-  const onSubmit = async (data: POFormValues) => {
+  const onSubmit = async (data: EditPOValues) => {
     setLoading(true)
     try {
       const currentSubtotal = data.lineItems.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0)
       data.taxAmount = (currentSubtotal * (data.taxRate || 0)) / 100
 
-      const res = await fetch("/api/po", {
-        method: "POST",
+      const res = await fetch(`/api/po/${poId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       })
 
       if (res.ok) {
-        toast.success("PO berhasil dibuat dan menunggu persetujuan")
-        router.push("/purchase-orders")
+        toast.success("PO berhasil diperbarui")
+        router.push(`/purchase-orders/${poId}`)
         router.refresh()
       } else {
         const err = await res.json().catch(() => ({}))
@@ -101,6 +125,13 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+        <p className="text-sm text-amber-800">
+          Anda sedang mengedit PO ini. Perubahan akan langsung tersimpan.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Supplier</label>
@@ -136,13 +167,23 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
         </div>
       </div>
 
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700">Catatan</label>
+        <textarea
+          {...register("notes")}
+          placeholder="Catatan opsional..."
+          rows={2}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+        />
+      </div>
+
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-slate-900">Barang / Item</h3>
         {errors.lineItems?.root && <p className="text-red-500 text-xs">{errors.lineItems.root.message}</p>}
-          <Table className="min-w-[800px]">
-            <TableHeader>
+        <Table className="min-w-[800px]">
+          <TableHeader>
             <TableRow>
-              <TableHead>Cari Barang</TableHead>
+              <TableHead>Pilih Barang (Master Data)</TableHead>
               <TableHead className="w-24">Satuan</TableHead>
               <TableHead className="w-24 text-right">Qty</TableHead>
               <TableHead className="w-40 text-right">Harga Satuan</TableHead>
@@ -166,7 +207,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                     readOnly
                     placeholder="Dus/Pack"
                     {...register(`lineItems.${index}.unit` as const)}
-                    className={`bg-slate-50 ${errors.lineItems?.[index]?.unit ? 'border-red-500' : ''}`}
+                    className="bg-slate-50"
                     aria-label="Satuan"
                   />
                 </TableCell>
@@ -183,7 +224,7 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                   <Input
                     type="number"
                     min="0"
-                    className={`text-right ${errors.lineItems?.[index]?.price ? 'border-red-500' : ''}`}
+                    className="text-right"
                     {...register(`lineItems.${index}.price` as const)}
                     aria-label="Harga Satuan"
                   />
@@ -194,9 +235,10 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                 <TableCell>
                   <button
                     type="button"
-                    onClick={() => remove(index)}
+                    onClick={() => fields.length > 1 ? remove(index) : null}
+                    disabled={fields.length <= 1}
                     aria-label="Hapus Item"
-                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -236,9 +278,9 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
       </div>
 
       <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
-        <Button type="button" variant="outline" onClick={() => router.back()}>Batal</Button>
+        <Button type="button" variant="outline" onClick={onCancel}>Batal</Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Menyimpan..." : "Buat PO & Minta Approval"}
+          {loading ? "Menyimpan..." : "Simpan Perubahan"}
         </Button>
       </div>
     </form>

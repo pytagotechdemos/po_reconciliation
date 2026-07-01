@@ -11,6 +11,7 @@ const sections = [
   { key: "Master Data", role: ["owner", "procurement"], items: [
     { href: "/items", icon: Package, label: "Barang" },
     { href: "/suppliers", icon: Building2, label: "Supplier" },
+    { href: "/suppliers/scorecard", icon: BarChart3, label: "Scorecard" },
   ]},
   { key: "Purchase Order", role: ["procurement"], items: [
     { href: "/purchase-orders", icon: ClipboardList, label: "Daftar PO" },

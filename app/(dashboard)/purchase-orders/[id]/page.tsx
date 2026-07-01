@@ -11,6 +11,8 @@ import { ApproveButton } from "@/components/po/ApproveButton"
 import { ReadyToPayButton } from "@/components/po/ReadyToPayButton"
 import { MarkPaidButton } from "@/components/po/MarkPaidButton"
 import { DuplicatePOButton } from "@/components/po/DuplicatePOButton"
+import { EditPOButton } from "@/components/po/EditPOButton"
+import { CancelPOButton } from "@/components/po/CancelPOButton"
 import { PackagePlus, FileText } from "lucide-react"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { getServerSession } from "next-auth/next"
@@ -34,8 +36,18 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
   if (!po) return notFound();
 
   const isOwner = session?.user?.role === "owner";
+  const isProcurement = session?.user?.role === "procurement";
   const isWarehouse = session?.user?.role === "warehouse";
   const isFinance = session?.user?.role === "finance";
+
+  // Fetch suppliers and items for EditPOButton
+  const [suppliers, items] = await Promise.all([
+    prisma.supplier.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.item.findMany({
+      select: { sku: true, name: true, unit: true, buyPrice: true },
+      orderBy: { name: "asc" }
+    }),
+  ])
 
   const totalOrdered = po.lineItems.reduce((acc, item) => acc + (Number(item.qtyOrdered) * Number(item.priceOrdered)), 0);
   const totalReceived = po.lineItems.reduce((acc, item) => acc + (Number(item.qtyReceived || 0) * Number(item.priceInvoice || item.priceOrdered)), 0);
@@ -43,6 +55,11 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
   const taxAmount = Number(po.taxAmount || 0);
   const grandTotal = totalReceived + taxAmount;
   const grandTotalOrdered = totalOrdered + taxAmount;
+
+  // PO can be edited if procurement/owner AND in DRAFT or WAITING_APPROVAL
+  const canEdit = (isProcurement || isOwner) && ["DRAFT", "WAITING_APPROVAL"].includes(po.status)
+  // PO can be cancelled if procurement/owner AND before goods receipt (DRAFT, WAITING_APPROVAL, SENT)
+  const canCancel = (isProcurement || isOwner) && ["DRAFT", "WAITING_APPROVAL", "SENT"].includes(po.status)
 
   return (
     <div className="space-y-6">
@@ -60,12 +77,18 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
         actions={
           <>
             <DuplicatePOButton poId={po.id} poNumber={po.poNumber} />
+            {canEdit && (
+              <EditPOButton poId={po.id} suppliers={suppliers} items={items} />
+            )}
+            {canCancel && (
+              <CancelPOButton poId={po.id} poNumber={po.poNumber} />
+            )}
             <PrintButton />
-            
+
             {po.status === "WAITING_APPROVAL" && isOwner && (
               <ApproveButton poId={po.id} />
             )}
-            
+
             {["SENT", "PARTIAL"].includes(po.status) && isWarehouse && (
               <Link href={`/purchase-orders/${po.id}/receive`}>
                 <Button className="shadow-sm font-semibold hover:bg-violet-50 hover:text-violet-700">
@@ -115,9 +138,20 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
               <dt className="text-slate-500">Tgl Diterima</dt>
               <dd className="font-medium text-slate-900">{po.dateReceived ? format(new Date(po.dateReceived), "dd MMM yyyy") : "-"}</dd>
             </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Estimasi</dt>
+              <dd className="font-medium text-slate-900">{po.dateExpected ? format(new Date(po.dateExpected), "dd MMM yyyy") : "-"}</dd>
+            </div>
           </dl>
         </div>
       </div>
+
+      {po.notes && (
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase text-slate-500 mb-2">Catatan</h3>
+          <p className="text-sm text-slate-700">{po.notes}</p>
+        </div>
+      )}
 
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <h3 className="text-lg font-semibold text-slate-900 p-2 mb-2">Item Pesanan</h3>
@@ -198,60 +232,58 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
             </p>
           )}
           <div className="space-y-3">
-            {po.goodsReceipts.map((gr, i) => {
-              return (
-                <div key={gr.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-                  <div className="mb-3">
-                    <p className="font-semibold text-slate-800">
-                      Penerimaan #{i + 1} — {format(new Date(gr.receiptDate), "dd MMM yyyy")}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Penerima: {gr.receivedBy}
-                      {gr.deliveryNoteNumber && ` · No. SJ: ${gr.deliveryNoteNumber}`}
-                      {gr.expiryDate && ` · Kadaluarsa: ${format(new Date(gr.expiryDate), "dd MMM yyyy")}`}
-                    </p>
-                  </div>
-                  <Table className="text-xs">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead className="text-right">Qty PO</TableHead>
-                        <TableHead className="text-right">Qty Diterima</TableHead>
-                        <TableHead className="text-right">Harga Invoice (per unit)</TableHead>
-                        <TableHead className="text-center">Kondisi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {po.lineItems.map(item => {
-                        const hasDiff = Number(item.qtyReceived || 0) !== Number(item.qtyOrdered);
-                        return (
-                          <TableRow key={item.id} className={hasDiff ? "bg-amber-50" : ""}>
-                            <TableCell className="font-medium">{item.itemName}</TableCell>
-                            <TableCell className="text-right">{Number(item.qtyOrdered)}</TableCell>
-                            <TableCell className="text-right">{Number(item.qtyReceived || 0)}</TableCell>
-                            <TableCell className="text-right">
-                              {item.priceInvoice ? `Rp ${Number(item.priceInvoice).toLocaleString("id-ID")}` : "-"}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {item.condition ? (
-                                <span className={cn(
-                                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                                  item.condition === "OK" ? "bg-green-100 text-green-700" :
-                                  item.condition === "DAMAGED" ? "bg-red-100 text-red-700" :
-                                  "bg-amber-100 text-amber-700"
-                                )}>
-                                  {item.condition === "OK" ? "OK" : item.condition === "DAMAGED" ? "Rusak" : "Kurang"}
-                                </span>
-                              ) : "-"}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+            {po.goodsReceipts.map((gr, i) => (
+              <div key={gr.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+                <div className="mb-3">
+                  <p className="font-semibold text-slate-800">
+                    Penerimaan #{i + 1} — {format(new Date(gr.receiptDate), "dd MMM yyyy")}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Penerima: {gr.receivedBy}
+                    {gr.deliveryNoteNumber && ` · No. SJ: ${gr.deliveryNoteNumber}`}
+                    {gr.expiryDate && ` · Kadaluarsa: ${format(new Date(gr.expiryDate), "dd MMM yyyy")}`}
+                  </p>
                 </div>
-              )
-            })}
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-right">Qty PO</TableHead>
+                      <TableHead className="text-right">Qty Diterima</TableHead>
+                      <TableHead className="text-right">Harga Invoice (per unit)</TableHead>
+                      <TableHead className="text-center">Kondisi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {po.lineItems.map(item => {
+                      const hasDiff = Number(item.qtyReceived || 0) !== Number(item.qtyOrdered);
+                      return (
+                        <TableRow key={item.id} className={hasDiff ? "bg-amber-50" : ""}>
+                          <TableCell className="font-medium">{item.itemName}</TableCell>
+                          <TableCell className="text-right">{Number(item.qtyOrdered)}</TableCell>
+                          <TableCell className="text-right">{Number(item.qtyReceived || 0)}</TableCell>
+                          <TableCell className="text-right">
+                            {item.priceInvoice ? `Rp ${Number(item.priceInvoice).toLocaleString("id-ID")}` : "-"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {item.condition ? (
+                              <span className={cn(
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                                item.condition === "OK" ? "bg-green-100 text-green-700" :
+                                item.condition === "DAMAGED" ? "bg-red-100 text-red-700" :
+                                "bg-amber-100 text-amber-700"
+                              )}>
+                                {item.condition === "OK" ? "OK" : item.condition === "DAMAGED" ? "Rusak" : "Kurang"}
+                              </span>
+                            ) : "-"}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
           </div>
         </div>
       )}
