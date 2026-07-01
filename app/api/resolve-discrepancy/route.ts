@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     const { poId, resolution } = parsed.data
 
     const userId = (session as { user?: { id?: string } }).user?.id
-      || (session as { user?: { name?: string } }).user?.name
-      || "unknown"
+      ?? "system"
+      
 
     const po = await prisma.purchaseOrder.findUnique({
       where: { id: poId },

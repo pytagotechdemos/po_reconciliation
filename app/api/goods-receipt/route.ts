@@ -121,22 +121,31 @@ export async function POST(req: Request) {
         data: { status: finalStatus, dateReceived: new Date(receiptDate) }
       })
 
-      // 4. Create SHORT_EXPIRY alert — one alert per GR, covering ALL PO items with short expiry
+      // 4. Create SHORT_EXPIRY alert — one alert per GR ITEM with short expiry, deduped per PO-item
       if (expiryDate) {
         const expiryThreshold = new Date(receiptDate)
         expiryThreshold.setDate(expiryThreshold.getDate() + 30)
         if (new Date(expiryDate) < expiryThreshold) {
-          // Alert itemName lists all items in the PO (not just this GR's items) so user knows full scope
-          const allItemNames = poTx.lineItems.map(li => li.itemName).join(", ")
-          await tx.alert.create({
-            data: {
-              poId,
-              type: "SHORT_EXPIRY",
-              itemName: allItemNames || "Barang",
-              valueDiff: new Prisma.Decimal(0),
-              profitLoss: new Prisma.Decimal(0),
-            }
+          // Check which items already have an unresolved SHORT_EXPIRY alert for this PO
+          const existingExpiryAlerts = await tx.alert.findMany({
+            where: { poId, type: "SHORT_EXPIRY", resolution: null },
+            select: { itemName: true }
           })
+          const existingExpiryItemNames = new Set(existingExpiryAlerts.map(a => a.itemName))
+          // Create one SHORT_EXPIRY alert per line item in this GR that triggered short expiry
+          for (const item of items) {
+            const dbItem = poTx.lineItems.find(li => li.id === item.poLineItemId)
+            if (!dbItem || existingExpiryItemNames.has(dbItem.itemName)) continue
+            await tx.alert.create({
+              data: {
+                poId,
+                type: "SHORT_EXPIRY",
+                itemName: dbItem.itemName,
+                valueDiff: new Prisma.Decimal(0),
+                profitLoss: new Prisma.Decimal(0),
+              }
+            })
+          }
         }
       }
 

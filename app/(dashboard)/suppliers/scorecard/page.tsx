@@ -49,8 +49,8 @@ export default async function SupplierScorecardPage() {
       const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1)
 
-      const recentOrders = supplier.orders.filter(o => o.createdAt >= threeMonthsAgo)
-      const olderOrders = supplier.orders.filter(o => o.createdAt >= sixMonthsAgo && o.createdAt < threeMonthsAgo)
+      const recentOrders = supplier.orders.filter(o => o.createdAt > threeMonthsAgo)
+      const olderOrders = supplier.orders.filter(o => o.createdAt <= threeMonthsAgo && o.createdAt >= sixMonthsAgo)
 
       const recentDiscrepancyRate = recentOrders.length > 0
         ? recentOrders.filter(o => o.status === "DISCREPANCY").length / recentOrders.length

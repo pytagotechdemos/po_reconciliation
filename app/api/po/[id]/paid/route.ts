@@ -23,8 +23,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const userId = (session as { user?: { id?: string } }).user?.id
-      || (session as { user?: { name?: string } }).user?.name
-      || "unknown"
+      ?? "system"
+      
 
     await prisma.$transaction(async (tx) => {
       // Read inside transaction — prevents race condition

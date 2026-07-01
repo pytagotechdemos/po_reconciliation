@@ -221,6 +221,8 @@ export function POForm({ suppliers, items }: { suppliers: Supplier[], items: Ite
                 PPN (%)
                 <Input
                   type="number"
+                  min="0"
+                  max="100"
                   className="w-20 h-8 px-2 py-1 text-right text-sm"
                   {...register("taxRate")}
                 />

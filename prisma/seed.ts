@@ -8,13 +8,15 @@ async function main() {
 
   // 1. Create Users
   const passwordHash = await bcrypt.hash('password123', 10);
-  
+
   await prisma.user.createMany({
     data: [
-      { username: 'owner', name: 'Direktur Utama', password: passwordHash, role: 'owner' },
+      { username: 'owner', name: 'Directeur Utama', password: passwordHash, role: 'owner' },
       { username: 'finance', name: 'Tim Keuangan', password: passwordHash, role: 'finance' },
       { username: 'warehouse', name: 'Kepala Gudang', password: passwordHash, role: 'warehouse' },
       { username: 'procurement', name: 'Tim Pengadaan', password: passwordHash, role: 'procurement' },
+      // System user for audit logs from background processes / migrations
+      { username: 'system', name: 'System', password: passwordHash, role: 'owner' },
     ]
   });
 
@@ -53,7 +55,7 @@ async function main() {
       createdBy: 'Tim Pengadaan',
       status: 'SENT',
       taxRate: 11,
-      taxAmount: 2145000, // 11% of 19,500,000
+      taxAmount: 2145000,
       lineItems: {
         create: [
           { sku: indomie.sku, itemName: indomie.name, unit: indomie.unit, qtyOrdered: 100, priceOrdered: indomie.buyPrice },
@@ -73,7 +75,7 @@ async function main() {
       createdBy: 'Tim Pengadaan',
       status: 'WAITING_APPROVAL',
       taxRate: 11,
-      taxAmount: 1512500, // 11% of 13,750,000
+      taxAmount: 1512500,
       lineItems: {
         create: [
           { sku: semen.sku, itemName: semen.name, unit: semen.unit, qtyOrdered: 250, priceOrdered: semen.buyPrice },
@@ -82,7 +84,7 @@ async function main() {
     },
   });
 
-  // 6. Create PO 3: DISCREPANCY (Oleh-oleh - Short Expiry Simulation)
+  // 6. Create PO 3: SENT (Oleh-oleh - Short Expiry Simulation)
   await prisma.purchaseOrder.create({
     data: {
       poNumber: 'PO-202606-0003',

@@ -18,7 +18,7 @@ const editLineItemSchema = z.object({
   sku: z.string().optional(),
   unit: z.string().min(1, "Satuan wajib diisi"),
   qty: z.coerce.number().min(1, "Minimal 1"),
-  price: z.coerce.number().min(0),
+  price: z.coerce.number().min(0, "Harga tidak boleh negatif"),
 })
 
 const editPoSchema = z.object({
@@ -214,7 +214,7 @@ export function EditPOForm({ poId, poData, suppliers, items, onCancel }: EditPOF
                 <TableCell>
                   <Input
                     type="number"
-                    min="1"
+                    min="0"
                     className={`text-right ${errors.lineItems?.[index]?.qty ? 'border-red-500' : ''}`}
                     {...register(`lineItems.${index}.qty` as const)}
                     aria-label="Quantity"
@@ -263,6 +263,8 @@ export function EditPOForm({ poId, poData, suppliers, items, onCancel }: EditPOF
                 PPN (%)
                 <Input
                   type="number"
+                  min="0"
+                  max="100"
                   className="w-20 h-8 px-2 py-1 text-right text-sm"
                   {...register("taxRate")}
                 />

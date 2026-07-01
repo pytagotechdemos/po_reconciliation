@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Search, X } from "lucide-react"
 
@@ -22,30 +22,70 @@ type ItemComboboxProps = {
 export function ItemCombobox({ items, value, onChange, className, placeholder = "Cari SKU atau nama..." }: ItemComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const selectedItem = items.find(i => i.sku === value)
 
   const filtered = query === ""
-    ? items.slice(0, 20) // Show first 20 when no query
+    ? items.slice(0, 20)
     : items.filter(i =>
         i.sku.toLowerCase().includes(query.toLowerCase()) ||
         i.name.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 30) // Max 30 results
+      ).slice(0, 30)
 
   const handleSelect = (sku: string) => {
     onChange(sku)
     setQuery("")
     setOpen(false)
+    setHighlightedIndex(-1)
     inputRef.current?.blur()
   }
 
   const handleClear = () => {
     onChange("")
     setQuery("")
+    setHighlightedIndex(-1)
     inputRef.current?.focus()
   }
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open || filtered.length === 0) return
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault()
+        setHighlightedIndex(prev => Math.min(prev + 1, filtered.length - 1))
+        break
+      case "ArrowUp":
+        e.preventDefault()
+        setHighlightedIndex(prev => Math.max(prev - 1, 0))
+        break
+      case "Enter":
+        e.preventDefault()
+        if (highlightedIndex >= 0 && filtered[highlightedIndex]) {
+          handleSelect(filtered[highlightedIndex].sku)
+        }
+        break
+      case "Escape":
+        e.preventDefault()
+        setOpen(false)
+        setHighlightedIndex(-1)
+        break
+    }
+  }, [open, filtered, highlightedIndex])
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && listRef.current) {
+      const highlightedEl = listRef.current.children[highlightedIndex] as HTMLElement
+      if (highlightedEl) {
+        highlightedEl.scrollIntoView({ block: "nearest" })
+      }
+    }
+  }, [highlightedIndex])
 
   // Close on outside click
   useEffect(() => {
@@ -54,16 +94,21 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
       if (!target.closest(".item-combobox-root")) {
         setOpen(false)
         setQuery("")
+        setHighlightedIndex(-1)
       }
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
+  // Reset highlight when query changes
+  useEffect(() => {
+    setHighlightedIndex(-1)
+  }, [query])
+
   return (
-    <div className={cn("relative item-combobox-root", className)}>
+    <div ref={containerRef} className={cn("relative item-combobox-root", className)}>
       {value && selectedItem ? (
-        // Show selected item chip
         <div className="flex items-center gap-2 p-2 bg-violet-50 border border-violet-200 rounded-lg">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-mono text-violet-600 truncate">{selectedItem.sku}</p>
@@ -79,7 +124,6 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
           </button>
         </div>
       ) : (
-        // Show searchable input
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
@@ -88,9 +132,12 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
             value={query}
             onChange={e => { setQuery(e.target.value); setOpen(true) }}
             onFocus={() => setOpen(true)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="w-full h-10 pl-10 pr-4 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white"
             aria-label="Cari barang"
+            aria-haspopup="listbox"
+            aria-expanded={open}
             autoComplete="off"
           />
         </div>
@@ -104,13 +151,17 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
               Tidak ada barang ditemukan
             </div>
           ) : (
-            <ul ref={listRef} className="divide-y divide-slate-100">
-              {filtered.map(item => (
-                <li key={item.sku}>
+            <ul ref={listRef} className="divide-y divide-slate-100" role="listbox">
+              {filtered.map((item, index) => (
+                <li key={item.sku} role="option" aria-selected={highlightedIndex === index}>
                   <button
                     type="button"
                     onClick={() => handleSelect(item.sku)}
-                    className="w-full px-4 py-3 text-left hover:bg-violet-50 transition-colors flex items-start gap-3"
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={cn(
+                      "w-full px-4 py-3 text-left hover:bg-violet-50 transition-colors flex items-start gap-3",
+                      highlightedIndex === index && "bg-violet-50 ring-1 ring-inset ring-violet-300"
+                    )}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

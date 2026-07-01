@@ -87,24 +87,26 @@ export async function POST(req: Request) {
     const { poId, invoiceNumber, amount, dateReceived } = parsed.data
 
     const userId = (session as { user?: { id?: string } }).user?.id
-      || (session as { user?: { name?: string } }).user?.name
-      || "unknown"
+      ?? "system"
+      
 
-    // Check if invoice number is already used globally
-    const existing = await prisma.invoice.findFirst({
-      where: { invoiceNumber }
-    })
-    if (existing) {
-      return NextResponse.json({ error: "Invoice number already used" }, { status: 409 })
-    }
-
-    const invoice = await prisma.invoice.create({
-      data: {
-        poId,
-        invoiceNumber,
-        amount,
-        dateReceived: dateReceived ? new Date(dateReceived) : new Date(),
+    const invoice = await prisma.$transaction(async (tx) => {
+      // Check if invoice number is already used globally — inside transaction to prevent race condition
+      const existing = await tx.invoice.findFirst({
+        where: { invoiceNumber }
+      })
+      if (existing) {
+        throw Object.assign(new Error("DUPLICATE_INVOICE"), { status: 409 })
       }
+
+      return tx.invoice.create({
+        data: {
+          poId,
+          invoiceNumber,
+          amount,
+          dateReceived: dateReceived ? new Date(dateReceived) : new Date(),
+        }
+      })
     })
 
     await prisma.auditLog.create({
@@ -119,10 +121,18 @@ export async function POST(req: Request) {
 
     return NextResponse.json(invoice)
   } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "status" in error && "message" in error) {
+      const status = (error as { status: number }).status
+      const message = (error as { message: string }).message
+      if (status === 409) {
+        return NextResponse.json({ error: "Nomor invoice sudah digunakan" }, { status: 409 })
+      }
+      return NextResponse.json({ error: message }, { status })
+    }
     if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
-      return NextResponse.json({ error: "Invoice number already used" }, { status: 409 })
+      return NextResponse.json({ error: "Nomor invoice sudah digunakan" }, { status: 409 })
     }
     console.error(error)
-    return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 })
+    return NextResponse.json({ error: "Gagal membuat invoice" }, { status: 500 })
   }
 }

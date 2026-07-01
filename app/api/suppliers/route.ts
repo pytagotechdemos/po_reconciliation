@@ -65,8 +65,7 @@ export async function POST(req: Request) {
     await prisma.auditLog.create({
       data: {
         userId: (session as { user?: { id?: string } }).user?.id
-          || (session as { user?: { name?: string } }).user?.name
-          || "unknown",
+          ?? "system",
         action: "CREATE",
         entityType: "Supplier",
         entityId: supplier.id,

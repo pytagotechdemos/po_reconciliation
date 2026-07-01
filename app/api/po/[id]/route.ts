@@ -93,9 +93,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const userId = (session as { user?: { id?: string } }).user?.id
-      || (session as { user?: { name?: string } }).user?.name
-      || "unknown"
+    const userId = (session as { user?: { id?: string } }).user?.id ?? "system"
 
     const updated = await prisma.$transaction(async (tx) => {
       const po = await tx.purchaseOrder.findUnique({
@@ -105,6 +103,16 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
       if (!po) throw Object.assign(new Error("PO_NOT_FOUND"), { status: 404 })
 
+      const { supplierId, dateOrdered, dateExpected, notes, taxRate, taxAmount, lineItems } = parsed.data
+
+      // Cannot change supplier after PO is sent/approved
+      if (po.status === "WAITING_APPROVAL" && supplierId !== po.supplierId) {
+        throw Object.assign(
+          new Error("PO tidak bisa mengganti supplier setelah diajukan persetujuan. Buat PO baru jika ingin menggunakan supplier berbeda."),
+          { status: 400 }
+        )
+      }
+
       // Only DRAFT or WAITING_APPROVAL can be edited
       if (po.status !== "DRAFT" && po.status !== "WAITING_APPROVAL") {
         throw Object.assign(
@@ -112,8 +120,6 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
           { status: 400 }
         )
       }
-
-      const { supplierId, dateOrdered, dateExpected, notes, taxRate, taxAmount, lineItems } = parsed.data
 
       // Calculate tax amount
       const subtotal = lineItems.reduce((acc, item) => acc + (item.qty * item.price), 0)

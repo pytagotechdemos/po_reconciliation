@@ -21,6 +21,7 @@ type LineItem = {
 
 type PODetail = {
   id: string
+  poNumber: string
   supplierId: string
   supplierName: string
   dateOrdered: string
@@ -77,7 +78,7 @@ export function EditPOButton({ poId, suppliers, items }: EditPOButtonProps) {
         <Modal
           isOpen
           onClose={() => { setOpen(false); setPoData(null) }}
-          title={`Edit PO: ${poData.id}`}
+          title={`Edit PO: ${poData.poNumber}`}
           size="xl"
         >
           <EditPOForm

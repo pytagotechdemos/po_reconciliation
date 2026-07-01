@@ -34,8 +34,8 @@ export function reconcileLineItems(
     const qtyDiff = Math.round(((Number(item.qtyOrdered) - qtyReceived) + Number.EPSILON) * 1000) / 1000;
     const priceDiff = Math.round(((priceInvoice - Number(item.priceOrdered)) + Number.EPSILON) * 100) / 100;
     
-    // Qty discrepancy exists if over-delivered (qtyDiff < 0) or explicitly marked as damaged/short
-    const hasQtyDiscrepancy = qtyDiff < -0.0001 || ((itemCondition === 'Rusak' || itemCondition === 'Kurang') && Math.abs(qtyDiff) > 0.0001);
+    // Qty discrepancy exists if over-delivered OR explicitly marked as damaged/short with missing units
+    const hasQtyDiscrepancy = qtyDiff < -0.0001 || ((itemCondition === 'Rusak' || itemCondition === 'Kurang') && qtyDiff > 0.0001);
     const hasPriceDiscrepancy = Math.abs(priceDiff) > 0.0001;
     
     // Value diff for qty discrepancy
