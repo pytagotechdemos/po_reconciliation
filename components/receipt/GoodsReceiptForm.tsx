@@ -197,7 +197,6 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
             {fields.map((field, index) => {
               const original = items[index];
               const currentQty = Number(watchItems[index]?.qtyReceived || 0);
-              const remainingQty = original.qtyOrdered - (original.qtyReceived || 0);
               const isOverDelivery = currentQty > original.qtyOrdered;
               const isUnderDelivery = currentQty < original.qtyOrdered && currentQty > 0;
               const hasDiff = currentQty !== original.qtyOrdered;

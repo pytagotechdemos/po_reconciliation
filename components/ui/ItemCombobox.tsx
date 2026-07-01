@@ -66,7 +66,11 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
       case "Enter":
         e.preventDefault()
         if (highlightedIndex >= 0 && filtered[highlightedIndex]) {
-          handleSelect(filtered[highlightedIndex].sku)
+          onChange(filtered[highlightedIndex].sku)
+          setQuery("")
+          setOpen(false)
+          setHighlightedIndex(-1)
+          inputRef.current?.blur()
         }
         break
       case "Escape":
@@ -75,7 +79,7 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
         setHighlightedIndex(-1)
         break
     }
-  }, [open, filtered, highlightedIndex])
+  }, [open, filtered, highlightedIndex, onChange])
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -136,8 +140,9 @@ export function ItemCombobox({ items, value, onChange, className, placeholder = 
             placeholder={placeholder}
             className="w-full h-10 pl-10 pr-4 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white"
             aria-label="Cari barang"
+            role="combobox"
             aria-haspopup="listbox"
-            aria-expanded={open}
+            aria-autocomplete="list"
             autoComplete="off"
           />
         </div>
