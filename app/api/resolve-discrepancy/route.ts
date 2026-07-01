@@ -72,12 +72,12 @@ export async function POST(req: Request) {
       })
 
       // Auto-update supplier performance score based on discrepancy history
-      const supplierPOs = await tx.purchaseOrder.findMany({
-        where: { supplierId: po.supplierId },
-        select: { id: true, status: true }
+      const totalPOs = await tx.purchaseOrder.count({
+        where: { supplierId: po.supplierId }
       })
-      const totalPOs = supplierPOs.length
-      const discrepancyPOs = supplierPOs.filter(p => p.status === "DISCREPANCY").length
+      const discrepancyPOs = await tx.purchaseOrder.count({
+        where: { supplierId: po.supplierId, status: "DISCREPANCY" }
+      })
       const discrepancyRate = totalPOs > 0 ? discrepancyPOs / totalPOs : 0
       // Score: 5 = no discrepancies, 1 = all discrepancies; clamp 1-5
       const performanceScore = Math.max(1, Math.min(5, Math.round(5 - discrepancyRate * 4)))

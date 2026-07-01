@@ -63,20 +63,7 @@ export async function POST(req: Request) {
         throw Object.assign(new Error("PO_NOT_IN_VALID_STATUS"), { status: 400 })
       }
 
-      // Over-receipt guard inside transaction — uses authoritative in-transaction read
-      for (const item of items) {
-        const dbItem = poTx.lineItems.find(li => li.id === item.poLineItemId)
-        if (!dbItem) continue
-        const existing = Number(dbItem.qtyReceived || 0)
-        const incoming = item.qtyReceived
-        const ordered = Number(dbItem.qtyOrdered)
-        if (incoming > ordered - existing) {
-          throw Object.assign(
-            new Error(`Jumlah terima untuk "${dbItem.itemName}" (${incoming}) melebihi sisa pesanan (${ordered - existing}).`),
-            { status: 400 }
-          )
-        }
-      }
+      // Over-receipt is no longer blocked here; it flows through to generate a QTY_DISCREPANCY alert.
 
       // Duplicate GR guard — prevent double-submit using delivery note number
       if (deliveryNoteNumber) {
@@ -156,32 +143,43 @@ export async function POST(req: Request) {
       // 5. Create QTY/PRICE discrepancy alerts
       if (discrepancy) {
         for (const diff of diffs) {
+          if (!diff.hasDiscrepancy) continue;
+
           const dbItem = poTx.lineItems.find(li => li.id === diff.itemId)
           const sku = dbItem?.sku || ""
           const sellPrice = sellPriceMap.get(sku) ?? null
-          const profitLoss = (sellPrice !== null && diff.qtyDiff > 0)
-            ? Math.round(diff.qtyDiff * (sellPrice - diff.priceOrdered) * 100) / 100
-            : null
 
-          if (Math.abs(diff.qtyDiff) > 0.0001) {
+          if (diff.hasQtyDiscrepancy) {
+            let qtyProfitLoss = null;
+            if (sellPrice !== null) {
+              if (diff.qtyDiff > 0) {
+                qtyProfitLoss = Math.round((diff.qtyDiff * (sellPrice - diff.priceOrdered) + Number.EPSILON) * 100) / 100;
+              } else if (diff.qtyDiff < 0) {
+                qtyProfitLoss = Math.round((Math.abs(diff.qtyDiff) * (sellPrice - diff.priceInvoice) * -1 + Number.EPSILON) * 100) / 100;
+              }
+            }
             await tx.alert.create({
               data: {
                 poId,
                 type: "QTY_DISCREPANCY",
                 itemName: diff.itemName,
-                valueDiff: Math.round(diff.qtyDiff * diff.priceOrdered * 100) / 100,
-                profitLoss: profitLoss !== null ? new Prisma.Decimal(profitLoss) : null,
+                valueDiff: diff.qtyDiscrepancyValue,
+                profitLoss: qtyProfitLoss !== null ? new Prisma.Decimal(qtyProfitLoss) : null,
               }
             })
           }
-          if (Math.abs(diff.priceDiff) > 0.0001) {
+          if (diff.hasPriceDiscrepancy) {
+            let priceProfitLoss = null;
+            if (sellPrice !== null) {
+              priceProfitLoss = diff.priceDiscrepancyValue;
+            }
             await tx.alert.create({
               data: {
                 poId,
                 type: "PRICE_DISCREPANCY",
                 itemName: diff.itemName,
-                valueDiff: Math.round(diff.priceDiff * diff.qtyReceived * 100) / 100,
-                profitLoss: profitLoss !== null ? new Prisma.Decimal(profitLoss) : null,
+                valueDiff: diff.priceDiscrepancyValue,
+                profitLoss: priceProfitLoss !== null ? new Prisma.Decimal(priceProfitLoss) : null,
               }
             })
           }

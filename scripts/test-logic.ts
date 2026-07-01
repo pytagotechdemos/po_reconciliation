@@ -4,7 +4,7 @@ import { POLineItem } from "@prisma/client";
 // receivedItems is the per-delivery payload (not used for qty in the fixed function,
 // but priceInvoice from it can override item.priceInvoice)
 // lineItems should contain the post-write accumulated qtyReceived
-function runTest(name: string, lineItems: POLineItem[], receivedItems: any[], expectDiscrepancy: boolean, expectStatus: string) {
+function runTest(name: string, lineItems: POLineItem[], receivedItems: { poLineItemId: string; qtyReceived: number; priceInvoice?: number; condition?: string }[], expectDiscrepancy: boolean, expectStatus: string) {
   // Simulate real flow: caller passes lineItems with updated qtyReceived already written.
   // The receivedItems qtyReceived is ignored for qty calculation (only priceInvoice matters).
   const diffs = reconcileLineItems(lineItems, receivedItems);

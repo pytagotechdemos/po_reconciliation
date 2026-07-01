@@ -11,6 +11,10 @@ export interface LineItemDiff {
   priceDiff: number;
   valueDiff: number;
   hasDiscrepancy: boolean;
+  hasQtyDiscrepancy: boolean;
+  hasPriceDiscrepancy: boolean;
+  qtyDiscrepancyValue: number;
+  priceDiscrepancyValue: number;
 }
 
 export function reconcileLineItems(
@@ -20,20 +24,34 @@ export function reconcileLineItems(
   return lineItems.map((item) => {
     const received = receivedItems.find((r) => r.poLineItemId === item.id);
 
-    // Use accumulated qtyReceived from the DB state, not per-delivery input.
-    // received.qtyReceived is the per-delivery amount for this call only;
-    // item.qtyReceived (from lineItems) already reflects the new accumulated total
-    // after the current goods-receipt write completes.
+    const itemCondition = (item as POLineItem & { condition?: string }).condition || received?.condition;
     const qtyReceived = Number(item.qtyReceived || 0);
     const priceInvoice = received?.priceInvoice != null
       ? received.priceInvoice
       : Number(item.priceInvoice || item.priceOrdered);
     
     // Value diff = value of missing units + price difference cost on received units
-    // Only count SHORT-delivery (not over-delivery) for qty loss
-    const qtyDiff = Math.round((Number(item.qtyOrdered) - qtyReceived) * 1000) / 1000;
-    const priceDiff = Math.round((priceInvoice - Number(item.priceOrdered)) * 100) / 100;
-    const valueDiff = Math.round(((Math.max(0, qtyDiff) * Number(item.priceOrdered)) + (priceDiff * qtyReceived)) * 100) / 100;
+    const qtyDiff = Math.round(((Number(item.qtyOrdered) - qtyReceived) + Number.EPSILON) * 1000) / 1000;
+    const priceDiff = Math.round(((priceInvoice - Number(item.priceOrdered)) + Number.EPSILON) * 100) / 100;
+    
+    // Qty discrepancy exists if over-delivered (qtyDiff < 0) or explicitly marked as damaged/short
+    const hasQtyDiscrepancy = qtyDiff < -0.0001 || ((itemCondition === 'Rusak' || itemCondition === 'Kurang') && Math.abs(qtyDiff) > 0.0001);
+    const hasPriceDiscrepancy = Math.abs(priceDiff) > 0.0001;
+    
+    // Value diff for qty discrepancy
+    let qtyDiscrepancyValue = 0;
+    if (qtyDiff > 0) {
+      qtyDiscrepancyValue = qtyDiff * Number(item.priceOrdered);
+    } else if (qtyDiff < 0) {
+      qtyDiscrepancyValue = Math.abs(qtyDiff) * priceInvoice;
+    }
+    qtyDiscrepancyValue = Math.round((qtyDiscrepancyValue + Number.EPSILON) * 100) / 100;
+
+    // Value diff for price discrepancy
+    const priceDiscrepancyValue = Math.round((priceDiff * qtyReceived + Number.EPSILON) * 100) / 100;
+
+    // Total value diff
+    const valueDiff = Math.round((qtyDiscrepancyValue + priceDiscrepancyValue + Number.EPSILON) * 100) / 100;
     
     return {
       itemId: item.id,
@@ -45,7 +63,11 @@ export function reconcileLineItems(
       priceInvoice,
       priceDiff,
       valueDiff,
-      hasDiscrepancy: Math.abs(qtyDiff) > 0.0001 || Math.abs(priceDiff) > 0.0001,
+      hasQtyDiscrepancy,
+      hasPriceDiscrepancy,
+      qtyDiscrepancyValue,
+      priceDiscrepancyValue,
+      hasDiscrepancy: hasQtyDiscrepancy || hasPriceDiscrepancy,
     };
   });
 }

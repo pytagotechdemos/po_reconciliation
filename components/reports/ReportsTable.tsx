@@ -66,7 +66,7 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
         </Button>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm overflow-x-auto">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow>
@@ -91,7 +91,7 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
                 <TableRow key={row.id}>
                   <TableCell className="font-mono text-sm font-medium">{row.poNumber}</TableCell>
                   <TableCell>{row.supplierName}</TableCell>
-                  <TableCell>{format(new Date(row.dateOrdered), "dd MMM yyyy")}</TableCell>
+                  <TableCell suppressHydrationWarning>{format(new Date(row.dateOrdered), "dd MMM yyyy")}</TableCell>
                   <TableCell>{row.status}</TableCell>
                   <TableCell className="text-right">Rp {row.totalOrdered.toLocaleString("id-ID")}</TableCell>
                   <TableCell className="text-right">Rp {row.totalReceived.toLocaleString("id-ID")}</TableCell>

@@ -47,22 +47,24 @@ export function POFilters() {
           <option value="PAID">Lunas</option>
         </select>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap sm:flex-nowrap">
         <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
         <input
           type="date"
           value={dateFrom}
           onChange={e => updateParam("from", e.target.value)}
-          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+          className="flex-1 min-w-[120px] sm:flex-none h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           title="Dari tanggal"
+          aria-label="Dari tanggal"
         />
-        <span className="text-slate-400 text-xs">—</span>
+        <span className="text-slate-400 text-xs flex-shrink-0">—</span>
         <input
           type="date"
           value={dateTo}
           onChange={e => updateParam("to", e.target.value)}
-          className="h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+          className="flex-1 min-w-[120px] sm:flex-none h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           title="Sampai tanggal"
+          aria-label="Sampai tanggal"
         />
       </div>
     </div>

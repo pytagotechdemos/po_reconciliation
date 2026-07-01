@@ -38,6 +38,9 @@ export function Modal({ isOpen, onClose, title, children, variant = "default", s
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               key="dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
               initial={{ opacity: 0, scale: 0.95, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -51,10 +54,11 @@ export function Modal({ isOpen, onClose, title, children, variant = "default", s
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   {variant === "destructive" && <AlertTriangle className="h-5 w-5 text-red-600" />}
-                  <h2 className="text-base font-bold text-slate-900">{title}</h2>
+                  <h2 id="modal-title" className="text-base font-bold text-slate-900">{title}</h2>
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label="Close modal"
                   className="rounded-lg p-1.5 hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
                 >
                   <X className="h-5 w-5" />

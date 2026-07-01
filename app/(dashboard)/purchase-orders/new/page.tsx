@@ -30,7 +30,7 @@ export default async function NewPurchaseOrderPage() {
         color="violet"
       />
       
-      <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6">
         <POForm suppliers={suppliers} items={items} />
       </div>
     </div>

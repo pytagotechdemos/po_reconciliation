@@ -61,6 +61,7 @@ export function Search({ size = "md", placeholder = "Cari...", className }: Sear
       <Input
         type="search"
         placeholder={placeholder}
+        aria-label={placeholder || "Cari"}
         className={cn(
           paddingMap[size],
           sizeMap[size],
@@ -72,6 +73,7 @@ export function Search({ size = "md", placeholder = "Cari...", className }: Sear
       {term && (
         <button
           onClick={() => setTerm("")}
+          aria-label="Clear search"
           className={cn(
             "absolute inset-y-0 right-0 flex items-center text-slate-400 hover:text-slate-600 transition-colors",
             size === "sm" ? "pr-3" : size === "lg" ? "pr-4" : "pr-3"

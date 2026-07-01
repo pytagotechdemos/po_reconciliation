@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link"
-import { ClipboardList, PackagePlus, Truck, AlertCircle, BarChart3, Settings, User, Building2, Package, ShieldAlert, ReceiptText, LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react"
+import { ClipboardList, PackagePlus, Truck, AlertCircle, BarChart3, Settings, User, Building2, Package, ShieldAlert, ReceiptText, LayoutDashboard, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSession } from "next-auth/react"
 import { useSidebar } from "./SidebarContext"
@@ -24,8 +24,9 @@ const sections = [
     { href: "/invoices", icon: ReceiptText, label: "Invoice" },
     { href: "/reports", icon: BarChart3, label: "Laporan" },
   ]},
-  { key: "Keamanan & Audit", role: ["owner", "finance"], items: [
+  { key: "Keamanan & Audit", role: ["owner"], items: [
     { href: "/audit-logs", icon: ShieldAlert, label: "Audit Trail" },
+    { href: "/users", icon: Users, label: "Manajemen User" },
   ]},
 ]
 
@@ -86,8 +87,7 @@ export function Sidebar({ className }: { className?: string }) {
 function SidebarInner({
   session, role, roleColors, discrepancyCount, close, collapsed, onToggleCollapse
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  session?: any
+  session?: import("next-auth").Session | null
   role?: string
   roleColors: Record<string, string>
   discrepancyCount: number

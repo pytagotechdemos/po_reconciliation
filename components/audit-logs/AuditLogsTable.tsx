@@ -211,7 +211,7 @@ export function AuditLogsTable({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2 text-slate-500">
                       <Clock className="w-4 h-4" />
-                      <span>{format(new Date(log.createdAt), "dd MMM yyyy, HH:mm:ss")}</span>
+                      <span suppressHydrationWarning>{format(new Date(log.createdAt), "dd MMM yyyy, HH:mm:ss")}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">

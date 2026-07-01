@@ -44,7 +44,7 @@ export default async function DiscrepanciesPage() {
         color="rose"
       />
 
-      <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
         
         <div className="flex justify-end">
           <ExportButton data={exportData} filename={`discrepancies_${format(new Date(), 'yyyy-MM-dd')}.csv`} />

@@ -39,13 +39,13 @@ export async function GET(req: Request) {
       const overduePOs = await prisma.purchaseOrder.findMany({
         where: {
           status: { in: ["READY_TO_PAY", "RECEIVED"] },
-          updatedAt: { lt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) }
+          updatedAt: { lt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) },
+          invoices: { none: {} }
         },
-        include: { supplier: true, invoices: { select: { id: true } } }
+        include: { supplier: true }
       })
       // Return only POs without any invoice record
-      const trulyOverdue = overduePOs.filter(po => po.invoices.length === 0)
-      return NextResponse.json(trulyOverdue.map(po => ({
+      return NextResponse.json(overduePOs.map(po => ({
         id: null,
         invoiceNumber: "BELUM ADA INVOICE",
         amount: null,

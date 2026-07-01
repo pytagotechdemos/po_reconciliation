@@ -50,7 +50,7 @@ export function TopBar() {
 
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Notification bell */}
-        <button className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" title="Notifikasi">
+        <button className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" title="Notifikasi" aria-label="Notifikasi">
           <Bell className="h-5 w-5" />
         </button>
 
@@ -59,7 +59,9 @@ export function TopBar() {
           <div ref={menuRef} className="relative">
             <button
               onClick={() => setMenuOpen(p => !p)}
-              className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-slate-200"
+              aria-label="Menu Pengguna"
+              aria-expanded={menuOpen}
+              className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-md"
             >
               {/* Avatar */}
               <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white text-xs font-bold shadow-sm">
