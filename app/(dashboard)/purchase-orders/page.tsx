@@ -1,13 +1,14 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import { Suspense } from "react"
 import { Button } from "@/components/ui/Button"
 import { PageHeader } from "@/components/ui/PageHeader"
-import { format } from "date-fns"
 import { Pagination } from "@/components/ui/Pagination"
 import { ExportButton } from "@/components/ExportButton"
 import { POFilters } from "@/components/POFilters"
 import { PurchaseOrdersTable } from "@/components/po/PurchaseOrdersTable"
 import { EmptyState } from "@/components/ui/EmptyState"
+import { format } from "date-fns"
 import { ShoppingCart, Plus } from "lucide-react"
 
 const ITEMS_PER_PAGE = 10
@@ -109,7 +110,7 @@ export default async function PurchaseOrdersPage({
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <POFilters />
+          <Suspense fallback={<div className="h-10 rounded-lg bg-slate-100 shimmer" />}><POFilters /></Suspense>
           <ExportButton data={exportData} filename={`purchase_orders_${format(new Date(), 'yyyy-MM-dd')}.csv`} />
         </div>
 
