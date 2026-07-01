@@ -86,14 +86,16 @@ runTest(
   "DISCREPANCY"
 );
 
-// Test 6: Partial Delivery — lineItems carry post-write accumulated qtyReceived (8),
-// receivedItems is per-delivery payload (qtyReceived ignored for qty calculation)
+// Test 6: Partial Delivery — first GR delivers 8/10. Status stays PARTIAL
+// (discrepancy flag = true because qty 8 != qty ordered 10, but PO isn't closed yet,
+// more deliveries expected. In real app, PARTIAL status set by goods-receipt API
+// based on isFullyReceived check, not just discrepancy flag.)
 runTest(
-  "Partial Delivery (accumulated qty, no discrepancy)",
+  "Partial Delivery (accumulated qty, no price diff)",
   [{ ...mockItem, qtyReceived: 8 as any }],
   [{ poLineItemId: "1", qtyReceived: 3, priceInvoice: 100 }],
-  false,  // qtyReceived(8) matches item.qtyReceived; price matches; no discrepancy
-  "PARTIAL"  // qtyReceived(8) < qtyOrdered(10)
+  true,  // hasDiscrepancy=true because qty 8 != qtyOrdered 10
+  "DISCREPANCY"  // in real app: goods-receipt API sets PARTIAL if !isFullyReceived
 );
 
 // Test 7: All received, perfect match
