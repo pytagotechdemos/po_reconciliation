@@ -2,11 +2,12 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.ts',  // Only run Playwright spec files
   timeout: 60000,
   fullyParallel: false,
   reporter: 'list',
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
   },
   projects: [
@@ -17,7 +18,7 @@ export default defineConfig({
   ],
   webServer: process.env.BASE_URL ? undefined : {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: true,
     timeout: 120000,
   },

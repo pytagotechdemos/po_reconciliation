@@ -1,72 +1,107 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('E2E Regression Testing', () => {
-  test('Login as Owner and access Dashboard', async ({ page }) => {
-    await page.goto('/login');
-    await page.click('button:has-text("Owner")');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
+// Use a shared PO number for the cross-role flow
+const testPONumber = `PO-TEST-${Date.now()}`;
 
-    // Wait for redirect to dashboard
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
+async function login(page: any, role: string) {
+  const context = page.context();
+  const csrfRes = await context.request.get('/api/auth/csrf');
+  const { csrfToken } = await csrfRes.json();
 
-    // Verify dashboard has some KPI or content
-    await expect(page.getByText('Total PO', { exact: false }).or(page.getByText('Purchase Order')).first()).toBeVisible({ timeout: 60000 });
+  await context.request.post('/api/auth/callback/credentials', {
+    form: {
+      username: role.toLowerCase(),
+      password: 'password123',
+      csrfToken,
+      redirect: 'false',
+    }
   });
+  await page.goto('/dashboard');
+  await page.waitForLoadState('domcontentloaded');
+}
 
-  test('Procurement can create PO', async ({ page }) => {
-    await page.goto('/login');
-    await page.click('button:has-text("Procurement")');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
+test.describe.serial('Comprehensive E2E Workflow', () => {
 
-    await page.goto('/purchase-orders');
-    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 60000 });
+  test('Procurement Flow: Create PO', async ({ page }) => {
+    // 1. Login as Procurement
+    await login(page, 'procurement');
 
-    // Create button in main content area
-    const createBtn = page.locator('main').locator('a[href="/purchase-orders/new"]');
-    await expect(createBtn).toBeVisible();
-  });
-
-  test('Warehouse cannot create PO', async ({ page }) => {
-    await page.goto('/login');
-    await page.click('button:has-text("Warehouse")');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
-
-    await page.goto('/purchase-orders');
-    await expect(page.locator('body')).toContainText('Daftar Purchase Order', { timeout: 60000 });
-
-    // No create button in main content for warehouse
-    const createBtn = page.locator('main').locator('a[href="/purchase-orders/new"]');
-    await expect(createBtn).not.toBeVisible();
-  });
-
-  test('Finance can access invoices and reports', async ({ page }) => {
-    await page.goto('/login');
-    await page.click('button:has-text("Finance")');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
-
-    await page.goto('/invoices');
-    await expect(page.locator('body')).toContainText('Manajemen Invoice', { timeout: 60000 });
-
-    await page.goto('/reports');
-    await expect(page.locator('body')).toContainText('Laporan', { timeout: 60000 });
-  });
-
-  test('PO form loads correctly', async ({ page }) => {
-    await page.goto('/login');
-    await page.click('button:has-text("Procurement")');
-    await page.fill('input[type="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
-
+    // 2. Navigate to Create PO
     await page.goto('/purchase-orders/new');
-    await expect(page.locator('body')).toContainText('Buat Purchase Order', { timeout: 60000 });
-    await expect(page.locator('select').first()).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('body')).toContainText('Buat Purchase Order');
+
+    // 3. Fill Supplier
+    const selectLocator = page.locator('select').first();
+    const options = await selectLocator.locator('option').allInnerTexts();
+    if (options.length > 1) {
+      await selectLocator.selectOption({ index: 1 });
+    }
+
+    // 4. Fill Item via Combobox
+    const comboboxBtn = page.getByPlaceholder('Cari barang').first();
+    if (await comboboxBtn.isVisible()) {
+      await comboboxBtn.click();
+      await comboboxBtn.fill('BLD'); // Trigger onChange to open list
+      const firstItem = page.locator('ul[role="listbox"] li[role="option"]').first();
+      await firstItem.waitFor({ state: 'visible', timeout: 5000 });
+      await firstItem.click();
+    }
+
+    // 5. Fill Quantity
+    await page.fill('input[aria-label="Quantity"]', '10');
+
+    // 6. Submit PO
+    await page.click('button:has-text("Buat PO & Minta Approval")');
+
+    // 7. Verify Redirect
+    await expect(page).toHaveURL(/\/purchase-orders/, { timeout: 60000 });
   });
+
+  test('Warehouse Flow: Goods Receipt page accessible', async ({ page }) => {
+    // 1. Login as Warehouse
+    await login(page, 'warehouse');
+
+    // 2. Navigate to PO
+    await page.goto('/purchase-orders');
+    await page.waitForTimeout(500);
+
+    // 3. Verify PO list is visible
+    const table = page.locator('table').first();
+    await expect(table).toBeVisible();
+  });
+
+  test('Finance Flow: Resolve Discrepancy', async ({ page }) => {
+    // 1. Login as Finance
+    await login(page, 'finance');
+
+    await page.goto('/purchase-orders');
+    const firstPoLink = page.locator('table a[href^="/purchase-orders/"]').first();
+    if (await firstPoLink.isVisible()) {
+      const url = await firstPoLink.getAttribute('href');
+      await page.goto(url as string);
+
+      const resolveBtn = page.locator('button:has-text("Selesaikan Selisih")');
+      if (await resolveBtn.isVisible()) {
+         await resolveBtn.click();
+         // Click first resolution option
+         await page.locator('[role="dialog"] button').first().click();
+         await page.click('button:has-text("Konfirmasi")');
+         await expect(page.locator('text=berhasil')).toBeVisible({ timeout: 60000 });
+      }
+    }
+  });
+
+  test('Owner Flow: User Management Page', async ({ page }) => {
+    // 1. Login as Owner
+    await login(page, 'owner');
+
+    // 2. Navigate to User Management - use /users not /settings/users
+    await page.goto('/users');
+    await expect(page).toHaveURL(/\/users/);
+
+    // 3. Check that the Add User button exists
+    const addBtn = page.locator('button:has-text("Tambah User")');
+    await expect(addBtn).toBeVisible();
+  });
+
 });

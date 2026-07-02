@@ -17,9 +17,15 @@ export default async function NewPurchaseOrderPage() {
     orderBy: { name: 'asc' }
   });
 
-  const items = await prisma.item.findMany({
+  const itemsRaw = await prisma.item.findMany({
     orderBy: { name: 'asc' }
   });
+
+  const items = itemsRaw.map(item => ({
+    ...item,
+    buyPrice: Number(item.buyPrice),
+    sellPrice: Number(item.sellPrice),
+  }));
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { reconcileLineItems, hasAnyDiscrepancy } from "@/lib/reconcile"
+import { sendDiscrepancyAlert } from "@/lib/email"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
@@ -195,6 +196,32 @@ export async function POST(req: Request) {
         }
       }
     })
+
+    // Send email alert if discrepancy detected (outside transaction to avoid long locks)
+    const poWithSupplier = await prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      include: { supplier: true, lineItems: true }
+    })
+    if (poWithSupplier) {
+      const finalDiffs = reconcileLineItems(poWithSupplier.lineItems, items)
+      if (finalDiffs.some(d => d.hasDiscrepancy)) {
+        const discrepancies = finalDiffs
+          .filter(d => d.hasDiscrepancy)
+          .map(d => ({
+            itemName: d.itemName,
+            qtyDiff: d.qtyDiff,
+            priceDiff: d.priceDiff,
+            valueDiff: d.qtyDiscrepancyValue + d.priceDiscrepancyValue,
+          }))
+        const totalValueDiff = discrepancies.reduce((sum, d) => sum + d.valueDiff, 0)
+
+        sendDiscrepancyAlert(
+          { poNumber: poWithSupplier.poNumber, supplierName: poWithSupplier.supplier.name, dateOrdered: poWithSupplier.dateOrdered },
+          discrepancies,
+          totalValueDiff
+        ).catch(err => console.error("[email] Failed to send discrepancy alert:", err))
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
