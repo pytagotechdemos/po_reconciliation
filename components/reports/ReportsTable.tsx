@@ -25,7 +25,7 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
     ? reportData
     : reportData.filter(r => r.status === filter)
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     if (filtered.length === 0) return
     const rows = filtered.map(r => ({
       "No. PO": r.poNumber,
@@ -46,6 +46,41 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
     })
   }
 
+  const handleExportPDF = async () => {
+    if (filtered.length === 0) return
+    try {
+      const jsPDFModule = await import("jspdf")
+      const autoTableModule = await import("jspdf-autotable")
+      
+      const JsPDFClass = jsPDFModule.default || (jsPDFModule as Record<string, unknown>).jsPDF
+      const autoTable = autoTableModule.default
+      
+      const doc = new JsPDFClass()
+      doc.text("Laporan Rekonsiliasi PO", 14, 15)
+      
+      const tableColumn = ["No. PO", "Supplier", "Tgl PO", "Status", "Total PO", "Total Aktual", "Selisih"]
+      const tableRows = filtered.map(r => [
+        r.poNumber,
+        r.supplierName,
+        format(new Date(r.dateOrdered), "dd MMM yyyy"),
+        r.status,
+        `Rp ${r.totalOrdered.toLocaleString("id-ID")}`,
+        `Rp ${r.totalReceived.toLocaleString("id-ID")}`,
+        `Rp ${r.diff.toLocaleString("id-ID")}`
+      ])
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 20,
+      })
+
+      doc.save(`laporan_rekonsiliasi_${format(new Date(), "yyyy-MM-dd")}.pdf`)
+    } catch (error) {
+      console.error("Failed to generate PDF:", error)
+    }
+  }
+
   const statuses = ["ALL", "DRAFT", "WAITING_APPROVAL", "SENT", "PARTIAL", "RECEIVED", "DISCREPANCY", "READY_TO_PAY", "PAID"]
 
   return (
@@ -60,10 +95,16 @@ export function ReportsTable({ reportData }: { reportData: ReportRow[] }) {
             <option key={s} value={s}>{s === "ALL" ? "Semua Status" : s.replace(/_/g, " ")}</option>
           ))}
         </select>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2" />
-          Export Laporan
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={handleExportPDF}>
+            <Download className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">

@@ -13,7 +13,7 @@ import { MarkPaidButton } from "@/components/po/MarkPaidButton"
 import { DuplicatePOButton } from "@/components/po/DuplicatePOButton"
 import { EditPOButton } from "@/components/po/EditPOButton"
 import { CancelPOButton } from "@/components/po/CancelPOButton"
-import { PackagePlus, FileText } from "lucide-react"
+import { PackagePlus, FileText, Image as ImageIcon } from "lucide-react"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
@@ -243,6 +243,13 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
                     {gr.deliveryNoteNumber && ` · No. SJ: ${gr.deliveryNoteNumber}`}
                     {gr.expiryDate && ` · Kadaluarsa: ${format(new Date(gr.expiryDate), "dd MMM yyyy")}`}
                   </p>
+                  {gr.photoUrl && (
+                    <div className="mt-3">
+                      <a href={gr.photoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+                        <ImageIcon className="w-4 h-4 mr-1.5 text-slate-400" /> Lihat Foto
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <Table className="text-xs">
                   <TableHeader>

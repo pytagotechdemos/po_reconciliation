@@ -13,6 +13,7 @@ model User {
   name      String
   password  String
   role      String     // procurement, warehouse, finance, owner
+  isActive  Boolean    @default(true)
   auditLogs AuditLog[]
   createdAt DateTime   @default(now())
 }
@@ -40,6 +41,7 @@ model Item {
   category     String?
   buyPrice     Decimal
   sellPrice    Decimal?
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 }
 
@@ -49,6 +51,7 @@ model Supplier {
   contact          String?
   paymentTerms     String?
   performanceScore Int?            @default(5)
+  isActive         Boolean         @default(true)
   orders           PurchaseOrder[]
   createdAt        DateTime        @default(now())
 }

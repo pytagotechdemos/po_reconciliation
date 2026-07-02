@@ -25,6 +25,7 @@ export async function GET() {
         username: true,
         name: true,
         role: true,
+        isActive: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
     const hashed = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: { username, name, password: hashed, role },
-      select: { id: true, username: true, name: true, role: true, createdAt: true },
+      select: { id: true, username: true, name: true, role: true, isActive: true, createdAt: true },
     })
 
     await prisma.auditLog.create({

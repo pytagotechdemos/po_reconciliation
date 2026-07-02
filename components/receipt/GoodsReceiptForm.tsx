@@ -171,11 +171,22 @@ export function GoodsReceiptForm({ poId, items }: { poId: string, items: Seriali
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Foto Surat Jalan (URL / Base64)</label>
+          <label className="text-sm font-medium text-slate-700">Foto Surat Jalan</label>
           <Input
-            type="text"
-            placeholder="https://..."
-            {...register("photoUrl")}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                  setValue("photoUrl", reader.result as string)
+                }
+                reader.readAsDataURL(file)
+              } else {
+                setValue("photoUrl", "")
+              }
+            }}
           />
         </div>
       </div>

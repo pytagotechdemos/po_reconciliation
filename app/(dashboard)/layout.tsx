@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
+import { CommandPalette } from "@/components/ui/CommandPalette";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
@@ -19,6 +20,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider discrepancyCount={discrepancyCount}>
+      <CommandPalette />
       <div className="flex min-h-screen bg-slate-50 overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col w-full transition-all duration-300 lg:pl-64">

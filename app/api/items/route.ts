@@ -20,7 +20,7 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const items = await prisma.item.findMany({ orderBy: { createdAt: "desc" } })
+    const items = await prisma.item.findMany({ where: { isActive: true }, orderBy: { createdAt: "desc" } })
     return NextResponse.json(items)
   } catch (error) {
     console.error(error)

@@ -1,9 +1,10 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { Shield, Bell, Settings, User, LogOut } from "lucide-react";
+import { Shield, Bell, Settings, User, LogOut, Users } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -18,6 +19,8 @@ export default function SettingsPage() {
   };
 
   if (!mounted) return null;
+
+  const isOwner = session?.user?.role === "owner";
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -35,6 +38,17 @@ export default function SettingsPage() {
             <User className="h-4 w-4" />
             Profil Pengguna
           </button>
+          
+          {isOwner && (
+            <Link 
+              href="/settings/users"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              Manajemen Pengguna
+            </Link>
+          )}
+
           <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
             <Bell className="h-4 w-4" />
             Notifikasi

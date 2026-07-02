@@ -92,14 +92,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       if (poCount > 0) {
         throw Object.assign(new Error("SUPPLIER_HAS_POS"), { status: 409 })
       }
-      const supplier = await tx.supplier.delete({ where: { id: params.id } })
+      const supplier = await tx.supplier.update({ where: { id: params.id }, data: { isActive: false } })
       await tx.auditLog.create({
         data: {
           userId: getUserId(session),
           action: "DELETE",
           entityType: "Supplier",
           entityId: supplier.id,
-          details: truncateDetails(`Menghapus supplier: ${supplier.name}`)
+          details: truncateDetails(`Menghapus (soft delete) supplier: ${supplier.name}`)
         }
       })
     })

@@ -35,7 +35,7 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const suppliers = await prisma.supplier.findMany({ orderBy: { createdAt: "desc" } })
+    const suppliers = await prisma.supplier.findMany({ where: { isActive: true }, orderBy: { createdAt: "desc" } })
     return NextResponse.json(suppliers)
   } catch (error) {
     console.error(error)

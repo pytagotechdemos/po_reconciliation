@@ -91,14 +91,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     if (!requireRole(session, ["owner"])) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
-    const item = await prisma.item.delete({ where: { id: params.id } })
+    const item = await prisma.item.update({ where: { id: params.id }, data: { isActive: false } })
     await prisma.auditLog.create({
       data: {
         userId: getUserId(session),
         action: "DELETE",
         entityType: "Item",
         entityId: item.id,
-        details: truncateDetails(`Menghapus barang: ${item.name} (SKU: ${item.sku})`)
+        details: truncateDetails(`Menghapus (soft delete) barang: ${item.name} (SKU: ${item.sku})`)
       }
     })
     return NextResponse.json({ success: true })

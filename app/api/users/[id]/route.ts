@@ -9,6 +9,7 @@ const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   password: z.string().min(6).optional(),
   role: z.enum(["owner", "procurement", "finance", "warehouse"]).optional(),
+  isActive: z.boolean().optional(),
 })
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -20,7 +21,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const user = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { id: true, username: true, name: true, role: true, createdAt: true },
+      select: { id: true, username: true, name: true, role: true, isActive: true, createdAt: true },
     })
 
     if (!user) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 })
@@ -31,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user?.role !== "owner") {
@@ -45,14 +46,15 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     const updateData: Record<string, unknown> = {}
-    if (parsed.data.name) updateData.name = parsed.data.name
-    if (parsed.data.role) updateData.role = parsed.data.role
-    if (parsed.data.password) updateData.password = await bcrypt.hash(parsed.data.password, 12)
+    if (parsed.data.name !== undefined) updateData.name = parsed.data.name
+    if (parsed.data.role !== undefined) updateData.role = parsed.data.role
+    if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive
+    if (parsed.data.password !== undefined) updateData.password = await bcrypt.hash(parsed.data.password, 12)
 
     const user = await prisma.user.update({
       where: { id: params.id },
       data: updateData,
-      select: { id: true, username: true, name: true, role: true, createdAt: true },
+      select: { id: true, username: true, name: true, role: true, isActive: true, createdAt: true },
     })
 
     await prisma.auditLog.create({
